@@ -9,8 +9,9 @@ express()
   .use(bodyParser.json())
 
   .get('/', (req, res) => {
-    db.query(`INSERT INTO users (username, password) VALUES ('name', 'pass')`)
-      .then(result => db.query(`SELECT * FROM users`))
+    db.query(`INSERT INTO user (username, password) VALUES ('name', 'pass')`)
+      .catch(console.error)
+      .then(result => db.query(`SELECT * FROM user`))
       .then(result => res.json(result))
   })
 
