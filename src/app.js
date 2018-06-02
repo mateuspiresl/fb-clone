@@ -7,6 +7,7 @@ import Database from './database'
 import { middleware as authenticate } from './auth'
 import AuthController from './controllers/auth'
 import UserController from './controllers/user'
+import ApiError from './api-error'
 
 
 const db = new Database()
@@ -21,13 +22,20 @@ export default express()
   .use('/user', authenticate(), UserController)
 
   .use(function (req, res, next) {
-    const error = new Error('Not found')
+    const error = new ApiError('Not found')
     error.status = 404
     next(error)
   })
   
   .use(function (error, req, res, next) {
-    console.error(error)
+    if (error instanceof ApiError) {
+      const status = error.status && ', status ' + error.status || ''
+      console.error(`Error: ${error.message}${status}`)
+    }
+    else {
+      console.error(error)
+    }
+
     res.status(error.status || 500)
     res.send(error.message)
   })
