@@ -93,7 +93,7 @@ Get user
 ```sql
 SELECT `id`, `name`, `birthdate`, `photo` FROM `user` as u
 LEFT JOIN `user_blocking` as ub ON u.`id`=ub.`blocker_id`
-WHERE u.`id`={user} AND ub.`blocked_id`!={self}
+WHERE u.`id`={user} AND (ub.`blocker_id` IS NULL OR ub.`blocked_id`!={self})
 ```
 
 List users

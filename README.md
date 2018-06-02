@@ -47,7 +47,7 @@ Get into the server:
 mysql --user=root --password=pw
 ```
 
-Copy the contents of  `/config/create.sql` and paste in the terminal.
+Copy the contents of  `/config/database.sql` and paste in the terminal.
 It will create the database and tables.
 
 ## Set the app
