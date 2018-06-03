@@ -42,6 +42,8 @@ const findAllQuery = db.prepare(
  *  otherwise.
  */
 export async function create(username, password, name) {
+  console.log('models/user/create', ...arguments)
+
   try {
     const result = await db.query(createQuery({ username, password, name }))
     return result.info.insertId || null
@@ -60,8 +62,9 @@ export async function create(username, password, name) {
  *  otherwise.
  */
 export async function update(selfId, data) {
+  console.log('models/user/update', selfId, JSON.stringify(data))
+
   const result = await db.query(createQuery({ selfId, ...data }))
-  console.log('models/user/update', result)
   return result.info.insertId || null
 }
 
@@ -73,6 +76,8 @@ export async function update(selfId, data) {
  *  otherwise.
  */
 export async function matchCredencials(username, password) {
+  console.log('models/user/update', ...arguments)
+
   const result = await db.query(matchCredencialsQuery({ username, password }))
   return result.length > 0 && result[0].id || null
 }
@@ -85,8 +90,9 @@ export async function matchCredencials(username, password) {
  * @returns {Promise<object>} The user id if found, or null, otherwise.
  */
 export async function findById(selfId, userId) {
+  console.log('models/user/findById', selfId, userId)
+
   const result = await db.query(findByIdQuery({ selfId, userId }))
-  console.log('models/user/findById', selfId, userId, result)
   return result.length > 0 && result[0] || null
 }
 
@@ -97,7 +103,8 @@ export async function findById(selfId, userId) {
  * @returns {Promise<Array<object>>} The users data.
  */
 export async function findAll(selfId) {
+  console.log('models/user', selfId)
+
   const result = await db.query(findAllQuery({ selfId }))
-  console.log('models/user', result)
   return result
 }

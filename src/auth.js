@@ -9,7 +9,7 @@ export function middleware() {
     secret: SECRET_TOKEN,
     getToken: (req) => {
       const token = extractToken(req)
-      console.log('middlewares/auth/authenticate', token, sessions.has(token))
+      console.log('auth/authenticate', token, sessions.has(token))
       return token
       // Session store disabled for development
       // return sessions.has(token) ? token : null
@@ -18,14 +18,14 @@ export function middleware() {
 }
 
 export function register(token) {
-  console.log('middlewares/auth/register', token)
+  console.log('auth/register', token)
   sessions.add(token)
 }
 
 export function unregister() {
   return (req, res, next) => {
     const token = extractToken(req)
-    console.log('middlewares/auth/logout', token)
+    console.log('auth/logout', token)
     sessions.delete(token)
   }
 }
