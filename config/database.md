@@ -96,12 +96,22 @@ LEFT JOIN `user_blocking` as ub ON u.`id`=ub.`blocker_id`
 WHERE u.`id`={user} AND (ub.`blocker_id` IS NULL OR ub.`blocked_id`!={self})
 ```
 
+Update user
+
+```sql
+UPDATE `user` SET
+  `name`=IF({name} IS NULL, `name`, {name}),
+  `birthdate`=IF({birthdate} IS NULL, `birthdate`, {birthdate}),
+  `photo`=IF({photo} IS NULL, `photo`, {photo})
+WHERE `id`={id}
+```
+
 List users
 
 ```sql
 SELECT u.`id`, u.`name`, u.`birthdate`, u.`photo` FROM `user` as u
 LEFT JOIN `user_blocking` as ub ON u.`id`=ub.`blocker_id`
-WHERE ub.`blocker_id` IS NULL OR ub.`blocked_id`!=?
+WHERE u.`id`!=? AND (ub.`blocker_id` IS NULL OR ub.`blocked_id`!=?)
 ```
 
 ### Friendship

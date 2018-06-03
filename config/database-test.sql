@@ -13,4 +13,12 @@ CREATE TABLE IF NOT EXISTS `user_blocking` (
   PRIMARY KEY (`blocker_id`, `blocked_id`)
 );
 
-; // # SET FOREIGN_KEY_CHECKS=0; DROP TABLE bericht; SET FOREIGN_KEY_CHECKS=1;
+CREATE TABLE IF NOT EXISTS `user_friendship_request` (
+  `requester_id` int(11) NOT NULL,
+  `requested_id` int(11) NOT NULL,
+  PRIMARY KEY (`requester_id`, `requested_id`),
+  CONSTRAINT `requester` FOREIGN KEY (`requester_id`) REFERENCES `user`(`id`),
+  CONSTRAINT `requested` FOREIGN KEY (`requested_id`) REFERENCES `user`(`id`)
+);
+
+SET FOREIGN_KEY_CHECKS=0; DROP TABLE `user`; SET FOREIGN_KEY_CHECKS=1;

@@ -4,8 +4,8 @@ USE `fb-clone`;
 CREATE TABLE IF NOT EXISTS `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(64) NOT NULL,
-  `birthdate` TIMESTAMP NOT NULL,
-  `photo` varchar(256) NOT NULL,
+  `birthdate` varchar(10) DEFAULT NULL, # yyyy-mm-dd
+  `photo` varchar(256) DEFAULT NULL,
   `username` varchar(32) NOT NULL,
   `password` varchar(256) NOT NULL,
   `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -19,8 +19,8 @@ export default Router()
   .post('/register', async (req, res, next) => {
     console.log('controllers/auth/register', req.body)
 
-    const { username, password } = req.body
-    const userId = await create(username, password)
+    const { username, password, name } = req.body
+    const userId = await create(username, password, name)
 
     if (userId) {
       authenticate(res, userId)

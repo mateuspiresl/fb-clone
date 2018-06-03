@@ -10,7 +10,9 @@ export function middleware() {
     getToken: (req) => {
       const token = extractToken(req)
       console.log('middlewares/auth/authenticate', token, sessions.has(token))
-      return sessions.has(token) ? token : null
+      return token
+      // Session store disabled for development
+      // return sessions.has(token) ? token : null
     }
   })
 }

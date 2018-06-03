@@ -30,6 +30,10 @@ export default class Database {
     return this.connection.prepare(sql)
   }
 
+  clear(table) {
+    return this.query('DELETE FROM `' + table + '`;')
+  }
+
   close() {
     this.connection.end()
     connectionInstance = null
