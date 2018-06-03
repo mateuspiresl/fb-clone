@@ -126,6 +126,16 @@ INSERT INTO `user_friendship_request` (`requester_id`, `requested_id`)
 VALUES (?, ?)
 ```
 
+Get friendship requests
+```sql
+INSERT INTO `user_friendship_request` (`requester_id`, `requested_id`)
+SELECT {selfId}, {requestedId} FROM dual
+WHERE NOT EXISTS (
+  SELECT * FROM `user_friendship_request`
+  WHERE `requester_id`={requestedId} AND `requested_id`={selfId}
+)
+```
+
 Accept friendship request
 
 ```sql
