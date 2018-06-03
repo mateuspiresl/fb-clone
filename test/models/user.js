@@ -17,22 +17,19 @@ function createSelf() {
   return insertUser('Z')
 }
 
-describe('Models | User', function () {
+describe('Models | User', () => {
   let ids
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     await db.clear('user')
 
     const insertions = names.map(name => insertUser(name))
     ids = await Promise.all(insertions)
   })
 
-  after(async function () {
-    await db.clear('user')
-    db.close()
-  })
+  after(() => db.clear('user'))
 
-  it('create', async function () {
+  it('create', async () => {
     const userId = await User.create('Dn', 'Dp', 'D')
     should.exist(userId)
     userId.should.be.a('string')
@@ -44,7 +41,7 @@ describe('Models | User', function () {
     should.exist(found)
   })
 
-  it.skip('update', async function () {
+  it.skip('update', async () => {
     const id = ids[0]
 
     function validate(user, name, birthdate, photo) {
@@ -84,7 +81,7 @@ describe('Models | User', function () {
     }
   })
 
-  it('match credencials', async function () {
+  it('match credencials', async () => {
     await Promise.all(names.map(async name => {
       const userId = await User.matchCredencials(`${name}n`, `${name}p`)
       should.exist(userId)
@@ -93,7 +90,7 @@ describe('Models | User', function () {
     }))
   })
 
-  it('find one', async function () {
+  it('find one', async () => {
     const selfId = await createSelf()
 
     await Promise.all(ids.map(async id => {
@@ -110,7 +107,7 @@ describe('Models | User', function () {
     should.not.exist(user)
   })
 
-  it('find all', async function () {
+  it('find all', async () => {
     const users = await User.findAll(await createSelf())
 
     await should.exist(users)

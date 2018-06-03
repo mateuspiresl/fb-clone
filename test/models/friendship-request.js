@@ -8,34 +8,26 @@ const should = chai.should()
 const db = new Database()
 const names = ['A', 'B', 'C']
 
+let ids = []
+let selfId = null
+
 function insertUser(name) {
   return User.create(`${name}n`, `${name}p`, name)
 }
 
-function createSelf() {
-  return insertUser('Z')
-}
-
-describe('Models | FriendshipRequest', function () {
-  let ids
-
-  beforeEach(async function () {
-    await db.clear('user_friendship_request')
-    await db.clear('user')
-
+describe('Models | FriendshipRequest', () => {
+  before(async () => {
+    // Create the users for testing
     const insertions = names.map(name => insertUser(name))
     ids = await Promise.all(insertions)
+
+    selfId = await insertUser('Z')
   })
 
-  after(async function () {
-    await db.clear('user_friendship_request')
-    await db.clear('user')
-    db.close()
-  })
+  afterEach(() => db.clear(FriendshipRequest.name))
+  after(() => db.clear(User.name))
 
-  it('request friendship', async function () {
-    const selfId = await createSelf()
-
+  it('request friendship', async () => {
     await Promise.all(
       ids.map(async id => {
         const result = await FriendshipRequest.create(selfId, id)
@@ -45,7 +37,7 @@ describe('Models | FriendshipRequest', function () {
     )
   })
   
-  it('can not request the friendship of the user who requested the inverse', async function () {
+  it('can not request the friendship of the user who requested the inverse', async () => {
     await FriendshipRequest.create(ids[0], ids[1])
 
     const result = await FriendshipRequest.create(ids[1], ids[0])
@@ -53,7 +45,7 @@ describe('Models | FriendshipRequest', function () {
     result.should.be.false
   })
 
-  it('cancel friendship request', async function () {
+  it('cancel friendship request', async () => {
     await FriendshipRequest.create(ids[0], ids[1])
     
     // should fail
@@ -71,8 +63,7 @@ describe('Models | FriendshipRequest', function () {
     }
   })
 
-  it('get users who requested friendship', async function () {
-    const selfId = await createSelf()
+  it('get users who requested friendship', async () => {
     await Promise.all(ids.map(id => FriendshipRequest.create(id, selfId)))
 
     const requestersIds = await FriendshipRequest.findAll(selfId)

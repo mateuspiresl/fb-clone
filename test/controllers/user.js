@@ -10,15 +10,15 @@ const db = new Database()
 const api = 'http://localhost:5000'
 const authRoute = `${api}/auth`
 const userRoute = `${api}/user`
-let ids = [], token
+
+let server = null
+let selfId = null
+let headers = {}
+let ids = []
 
 function create(n) {
   const data = [`u${n}`, `p${n}`, `n${n}`]
   return User.create(...data)
-}
-
-function getHeaders() {
-  return { Authorization: `Bearer ${token}` }
 }
 
 function validate(user, n) {
@@ -41,39 +41,44 @@ function validate(user, n) {
 }
 
 describe('Controllers | User', () => {
-  let server
+  before(async () => {
+    await Promise.all([
+      // Start server
+      new Promise(resolve => server = app.listen(5000, resolve)),
 
-  before((done) => server = app.listen(5000, done))
+      // Create the users for testing
+      (async () => {
+        await db.clear(User.name)
+        ids = await Promise.all([1, 2].map(n => create(n)))
+      })()
+    ])
 
-  beforeEach(async function () {
-    await db.clear('user')
-    ids = await Promise.all([1, 2].map(n => create(n)))
-
+    // Create the authenticated user
     const credencials = { username: `u0`, password: `p0`, name: `n0` }
     const response = await axios.post(`${authRoute}/register`, credencials)
-    token = response.data.token
+    selfId = response.data.user.id
+    headers.Authorization = `Bearer ${response.data.token}`
   })
 
-  after(async function () {
-    await db.clear('user')
-    db.close()
+  after(async () => {
+    await db.clear(User.name)
     server.close()
   })
 
   it('get self', async function () {
-    const response = await axios.get(`${userRoute}/me`, { headers: getHeaders() })
+    const response = await axios.get(`${userRoute}/me`, { headers })
     validate(response.data, 0)
   })
 
   it('get user', async function () {
     await Promise.all(ids.map(async id => {
-      const response = await axios.get(`${userRoute}/${id}`, { headers: getHeaders() })
+      const response = await axios.get(`${userRoute}/${id}`, { headers })
       validate(response.data)
     }))
   })
 
   it('get all users', async function () {
-    const response = await axios.get(userRoute, { headers: getHeaders() })
+    const response = await axios.get(userRoute, { headers })
     const users = response.data
 
     should.exist(users)
