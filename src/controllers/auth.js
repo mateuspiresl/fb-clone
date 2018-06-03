@@ -11,7 +11,7 @@ import user from './user';
 function authenticate(res, userId) {
   const token = jwt.sign({ id: userId }, SECRET_TOKEN)
   register(token)
-  res.json({ token })
+  res.json({ token, user: { id: userId } })
 }
 
 export default Router()

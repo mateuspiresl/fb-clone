@@ -7,7 +7,8 @@ const sessions = new Set()
 export function middleware() {
   return jwtMiddleware({
     secret: SECRET_TOKEN,
-    getToken: (req) => {
+    
+    getToken(req) {
       const token = extractToken(req)
       console.log('auth/authenticate', token, sessions.has(token))
       return token

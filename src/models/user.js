@@ -34,6 +34,8 @@ const findAllQuery = db.prepare(
 )
 
 
+export const name = 'user'
+
 /**
  * Creates an user.
  * @param {string} username The username.

@@ -23,15 +23,19 @@ const findAllQuery = db.prepare(
 )
 
 
+export const name = 'user_friendship_request'
+
 /**
  * Creates a friendship request.
  * If this request is already created of there is an existent request from the
  * current requested to the requester, the return value will be false.
  * @param {string} requesterId The id of the requester.
  * @param {string} requestedId The id of the requested.
- * @returns {Promise<boolean>} True if the request of successfuly created, false otherwise.
+ * @returns {Promise<boolean>} True if the request was successfuly created, false otherwise.
  */
 export async function create(requesterId, requestedId) {
+  console.log('models/friendship-request/create', ...arguments)
+
   try {
     const result = await db.query(createQuery({ requesterId, requestedId }))
     return result.info.affectedRows == '1'
@@ -42,18 +46,28 @@ export async function create(requesterId, requestedId) {
   }
 }
 
-export async function remove(requesterId, requestedId) {
-  const params = { requesterId, requestedId }
-  const result = await db.query(removeQuery(params))
-  return result.info.affectedRows == '1'
-}
-
 /**
  * Returns the requesters of all friendship requests to an user.
  * @param {string} requestedId The id of the requested user.
  * @returns {Promise<Array<string>>} The ids of the requesters.
  */
 export async function findAll(requestedId) {
+  console.log('models/friendship-request/findAll', ...arguments)
+
   const result = await db.query(findAllQuery({ requestedId }))
   return result.map(request => request.requester_id)
+}
+
+/**
+ * Removes a friendship request.
+ * @param {string} requesterId The id of the requester.
+ * @param {string} requestedId The id of the requested.
+ * @returns {Promise<boolean>} True if the request was removed, false otherwise.
+ */
+export async function remove(requesterId, requestedId) {
+  console.log('models/friendship-request/remove', ...arguments)
+
+  const params = { requesterId, requestedId }
+  const result = await db.query(removeQuery(params))
+  return result.info.affectedRows == '1'
 }

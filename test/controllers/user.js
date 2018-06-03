@@ -41,6 +41,10 @@ function validate(user, n) {
 }
 
 describe('Controllers | User', () => {
+  let server
+
+  before((done) => server = app.listen(5000, done))
+
   beforeEach(async function () {
     await db.clear('user')
     ids = await Promise.all([1, 2].map(n => create(n)))
@@ -53,7 +57,7 @@ describe('Controllers | User', () => {
   after(async function () {
     await db.clear('user')
     db.close()
-    app.close()
+    server.close()
   })
 
   it('get self', async function () {

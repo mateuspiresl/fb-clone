@@ -7,6 +7,7 @@ import Database from './database'
 import { middleware as authenticate } from './auth'
 import AuthController from './controllers/auth'
 import UserController from './controllers/user'
+import FriendshipController from './controllers/friendship'
 import ApiError from './api-error'
 
 
@@ -20,6 +21,7 @@ export default express()
 
   .use('/auth', AuthController)
   .use('/user', authenticate(), UserController)
+  .use('/friendship', authenticate(), FriendshipController)
 
   .use(function (req, res, next) {
     const error = new ApiError('Not found')
@@ -38,8 +40,4 @@ export default express()
 
     res.status(error.status || 500)
     res.send(error.message)
-  })
-
-  .listen(5000, () => {
-    console.log('App on localhost:5000')
   })

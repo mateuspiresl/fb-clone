@@ -17,7 +17,7 @@ function createSelf() {
   return insertUser('Z')
 }
 
-describe.only('Models | User', function () {
+describe('Models | User', function () {
   let ids
 
   beforeEach(async function () {
