@@ -18,8 +18,8 @@ export default Router()
 
   /**
    * GET /friendship/request
-   * Gets all the friendship requests made to the authenticated user.
-   * @returns {Array<string>} The ids of the requesters.
+   * Gets all the users who requested friendship to the authenticated user.
+   * @returns {Array<string>} The data of the requesters.
    */
   .get('/request', logRequest(), async (req, res, next) => {
     res.json(await FriendshipRequest.findAll(req.user.id))

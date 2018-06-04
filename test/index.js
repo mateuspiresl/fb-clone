@@ -7,15 +7,17 @@ import '../src/utils'
 
 const db = new Database()
 
-before(async () => {
+async function clearAll() {
   await db.clear(FriendshipRequest.name)
   await db.clear(Friendship.name)
   await db.clear(User.name)
+}
+
+before(async () => {
+  await clearAll()
 })
 
 after(async () => {
-  await db.clear(FriendshipRequest.name)
-  await db.clear(Friendship.name)
-  await db.clear(User.name)
+  await clearAll()
   db.close()
 })

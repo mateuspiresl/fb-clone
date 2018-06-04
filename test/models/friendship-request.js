@@ -2,6 +2,7 @@ import chai from 'chai'
 import Database from '../../src/database'
 import * as User from '../../src/models/user'
 import * as FriendshipRequest from '../../src/models/friendship-request'
+import '../index'
 
 
 const should = chai.should()
@@ -66,9 +67,15 @@ describe('Models | FriendshipRequest', () => {
   it('get users who requested friendship', async () => {
     await Promise.all(ids.map(id => FriendshipRequest.create(id, selfId)))
 
-    const requestersIds = await FriendshipRequest.findAll(selfId)
-    should.exist(requestersIds)
-    requestersIds.should.be.an('array').that.has.length(3)
-    requestersIds.should.include.members(ids)
+    const requesters = await FriendshipRequest.findAll(selfId)
+    should.exist(requesters)
+    requesters.should.be.an('array').that.has.length(3)
+    requesters.forEach(user => {
+      user.should.be.an('object')
+      user.should.have.property('id')
+      user.should.have.property('name')
+      user.should.have.property('photo')
+      ids.should.include(user.id)
+    })
   })
 })

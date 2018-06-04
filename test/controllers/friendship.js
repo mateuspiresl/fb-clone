@@ -68,7 +68,13 @@ describe('Controllers | Friendship', () => {
 
       should.exist(requesters)
       requesters.should.be.an('array').that.has.length(2)
-      requesters.forEach(requester => ids.includes(requester).should.be.true)
+      requesters.forEach(user => {
+        user.should.be.an('object')
+        user.should.have.property('id')
+        user.should.have.property('name')
+        user.should.have.property('photo')
+        ids.should.include(user.id)
+      })
     })
   
     it('request friendship', async () => {
@@ -76,8 +82,8 @@ describe('Controllers | Friendship', () => {
         await axios.post(requestRoute, { requestedId: id }, { headers })
         
         const requesters = await FriendshipRequest.findAll(id)
-        requesters.should.be.an('array').that.has.length(1)
-        requesters.should.include(selfId)
+        requesters.should.have.length(1)
+        requesters[0].id.should.equal(selfId)
       })
     })
 

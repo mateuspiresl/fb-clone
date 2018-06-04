@@ -126,7 +126,8 @@ INSERT INTO `user_friendship_request` (`requester_id`, `requested_id`)
 VALUES (?, ?)
 ```
 
-Get friendship requests
+Create friendship request
+
 ```sql
 INSERT INTO `user_friendship_request` (`requester_id`, `requested_id`)
 SELECT {selfId}, {requestedId} FROM dual
@@ -136,14 +137,25 @@ WHERE NOT EXISTS (
 )
 ```
 
+Get friendship requests (users)
+
+```sql
+SELECT u.`id`, u.`name`, u.`photo` FROM `user_friendship_request` as r
+RIGHT JOIN `user` as u ON u.`id`=r.`requester_id`
+WHERE `requested_id`={requestedId}
+```
+
 Accept friendship request
 
 ```sql
-DELETE FROM `user_friendship_request`
-WHERE (?, ?)
+@remove_friendship_request
 
 INSERT INTO `user_friendship` (`user_a_id`, `user_b_id`)
-VALUES (?, ?)
+SELECT :user_a_id, :user_b_id FROM dual
+WHERE NOT EXISTS (
+  SELECT * FROM `user_friendship`
+  WHERE `user_a_id`=:user_b_id AND `user_b_id`=:user_a_id
+)
 ```
 
 Decline friendship request
