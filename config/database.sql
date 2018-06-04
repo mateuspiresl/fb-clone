@@ -78,8 +78,11 @@ CREATE TABLE IF NOT EXISTS `comment_answer` (
 );
 
 CREATE TABLE IF NOT EXISTS `group` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `creator_id` int(11) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  `description` varchar(512) NOT NULL,
+  `picture` varchar(256) NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `creator` FOREIGN KEY (`creator_id`) REFERENCES `user`(`id`)
 );
