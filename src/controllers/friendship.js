@@ -5,11 +5,6 @@ import ApiError from '../api-error'
 import { logRequest } from '../middlewares/logger'
 
 
-function log(name, ...args) {
-  const tag = name.length > 0 ? `/${name}` : ''
-  console.log(`controllers/friendship${tag}`, ...args)
-}
-
 export default Router()
 
   /**

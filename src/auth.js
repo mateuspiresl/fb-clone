@@ -1,16 +1,11 @@
 import jwtMiddleware from 'express-jwt'
 import { logAllowed } from './config'
+import { createLogger } from './utils'
 
 
 const SECRET_TOKEN = 'secret'
 const sessions = new Set()
-
-function log(name, ...args) {
-  if (logAllowed.queries) {
-    const tag = name.length > 0 ? `/${name}` : ''
-    console.log(`auth${tag}`, ...args)
-  }
-}
+const log = createLogger('auth', logAllowed.auth)
 
 export function middleware() {
   return jwtMiddleware({

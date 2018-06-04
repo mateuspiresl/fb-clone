@@ -1,7 +1,7 @@
 import mariasql from 'mariasql'
+import { logAllowed } from './config'
 
 
-const logSql = false
 let connectionInstance = null
 
 export default class Database {
@@ -19,7 +19,7 @@ export default class Database {
   }
 
   query(sql) {
-    if (logSql) console.log('SQL:', sql)
+    if (logAllowed.sql) console.log('SQL:', sql)
     
     return new Promise((resolve, reject) => {
       this.connection.query(sql, (error, result) => {

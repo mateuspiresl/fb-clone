@@ -11,8 +11,9 @@ export function logRequest() {
       ...req.body
     })
     
-    console.log(`~${req.method} ${req.originalUrl.substr(1)}`,
-      req.user.id, params)
+    console.log(`${req.method} ${req.originalUrl.substr(1)}`,
+      req.user ? req.user.id : 'no-user', params)
+    
     next()
   }
 }

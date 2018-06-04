@@ -1,8 +1,10 @@
 import Database from '../database'
 import { logAllowed } from '../config'
+import { createLogger } from '../utils'
 
 
 const db = new Database()
+const log = createLogger('models/friendship-request', logAllowed.queries)
 
 const createQuery = db.prepare(
   'INSERT INTO `user_friendship_request` (`requester_id`, `requested_id`) ' +
@@ -22,13 +24,6 @@ const findAllQuery = db.prepare(
   'SELECT `requester_id` FROM `user_friendship_request` ' +
   'WHERE `requested_id`=:requestedId;'
 )
-
-function log(name, ...args) {
-  if (logAllowed.queries) {
-    const tag = name.length > 0 ? `/${name}` : ''
-    console.log(`models/friendship-request${tag}`, ...args)
-  }
-}
 
 export const name = 'user_friendship_request'
 

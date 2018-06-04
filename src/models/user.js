@@ -1,8 +1,10 @@
 import Database from '../database'
 import { logAllowed } from '../config'
+import { createLogger } from '../utils'
 
 
 const db = new Database()
+const log = createLogger('models/user', logAllowed.queries)
 
 const createQuery = db.prepare(
   'INSERT INTO `user` (`username`, `password`, `name`) ' +
@@ -33,13 +35,6 @@ const findAllQuery = db.prepare(
   'LEFT JOIN `user_blocking` as ub ON u.`id`=ub.`blocker_id` ' +
   'WHERE u.`id`!=:selfId AND (ub.`blocker_id` IS NULL OR ub.`blocked_id`!=:selfId);'
 )
-
-function log(name, ...args) {
-  if (logAllowed.queries) {
-    const tag = name.length > 0 ? `/${name}` : ''
-    console.log(`models/user${tag}`, ...args)
-  }
-}
 
 export const name = 'user'
 

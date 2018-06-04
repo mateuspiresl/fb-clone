@@ -1,8 +1,10 @@
 import Database from '../database'
 import { logAllowed } from '../config'
+import { createLogger } from '../utils'
 
 
 const db = new Database()
+const log = createLogger('models/friendship', logAllowed.queries)
 
 const createQuery = db.prepare(
   'INSERT INTO user_friendship (user_a_id, user_b_id) ' +
@@ -26,13 +28,6 @@ const removeQuery = db.prepare(
   'WHERE (user_a_id=:user_a_id AND user_b_id=:user_b_id) ' +
     'OR (user_a_id=:user_b_id AND user_b_id=:user_a_id);'
 )
-
-function log(name, ...args) {
-  if (logAllowed.queries) {
-    const tag = name.length > 0 ? `/${name}` : ''
-    console.log(`models/friendship${tag}`, ...args)
-  }
-}
 
 export const name = 'user_friendship'
 
