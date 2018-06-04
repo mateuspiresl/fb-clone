@@ -1,4 +1,5 @@
 import Database from '../database'
+import { logAllowed } from '../config'
 
 
 const db = new Database()
@@ -33,6 +34,12 @@ const findAllQuery = db.prepare(
   'WHERE u.`id`!=:selfId AND (ub.`blocker_id` IS NULL OR ub.`blocked_id`!=:selfId);'
 )
 
+function log(name, ...args) {
+  if (logAllowed.queries) {
+    const tag = name.length > 0 ? `/${name}` : ''
+    console.log(`models/user${tag}`, ...args)
+  }
+}
 
 export const name = 'user'
 
@@ -44,7 +51,7 @@ export const name = 'user'
  *  otherwise.
  */
 export async function create(username, password, name) {
-  console.log('models/user/create', ...arguments)
+  log('create', ...arguments)
 
   try {
     const result = await db.query(createQuery({ username, password, name }))
@@ -64,7 +71,7 @@ export async function create(username, password, name) {
  *  otherwise.
  */
 export async function update(selfId, data) {
-  console.log('models/user/update', selfId, JSON.stringify(data))
+  log('update', selfId, JSON.stringify(data))
 
   const result = await db.query(createQuery({ selfId, ...data }))
   return result.info.insertId || null
@@ -78,7 +85,7 @@ export async function update(selfId, data) {
  *  otherwise.
  */
 export async function matchCredencials(username, password) {
-  console.log('models/user/update', ...arguments)
+  log('update', ...arguments)
 
   const result = await db.query(matchCredencialsQuery({ username, password }))
   return result.length > 0 && result[0].id || null
@@ -92,7 +99,7 @@ export async function matchCredencials(username, password) {
  * @returns {Promise<object>} The user id if found, or null, otherwise.
  */
 export async function findById(selfId, userId) {
-  console.log('models/user/findById', selfId, userId)
+  log('findById', selfId, userId)
 
   const result = await db.query(findByIdQuery({ selfId, userId }))
   return result.length > 0 && result[0] || null
@@ -105,7 +112,7 @@ export async function findById(selfId, userId) {
  * @returns {Promise<Array<object>>} The users data.
  */
 export async function findAll(selfId) {
-  console.log('models/user', selfId)
+  log('', selfId)
 
   const result = await db.query(findAllQuery({ selfId }))
   return result

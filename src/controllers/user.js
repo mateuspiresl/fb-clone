@@ -2,12 +2,13 @@ import { Router } from 'express'
 import * as User from '../models/user'
 import ApiError from '../api-error'
 import { unregister } from '../auth'
+import { logRequest } from '../middlewares/logger'
+import { logAllowed } from '../config'
 
 
 export default Router()
 
-  .get('/me', async (req, res, next) => {
-    console.log('controllers/user/me', req.user.id)
+  .get('/me', logRequest(), async (req, res, next) => {
     const user = await User.findById(req.user.id, req.user.id)
 
     if (user) {
@@ -18,8 +19,7 @@ export default Router()
     }
   })
 
-  .get('/:id', async (req, res, next) => {
-    console.log('controllers/user/:id', req.user.id, req.params.id)
+  .get('/:id', logRequest(), async (req, res, next) => {
     const user = await User.findById(req.user.id, req.params.id)
 
     if (user) {
@@ -29,13 +29,6 @@ export default Router()
     }
   })
 
-  .get('/', async (req, res, next) => {
-    console.log('controllers/user', req.user.id)
-    const users = await User.findAll(req.user.id)
-
-    if (users) {
-      res.json(users)
-    } else {
-      throw new ApiError('Users not found', 404)
-    }
+  .get('/', logRequest(), async (req, res, next) => {
+    res.json(await User.findAll(req.user.id))
   })

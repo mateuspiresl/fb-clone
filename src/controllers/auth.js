@@ -6,6 +6,7 @@ import { create, matchCredencials } from '../models/user'
 import { register, unregister } from '../auth'
 import ApiError from '../api-error'
 import user from './user';
+import { logRequest } from '../middlewares/logger'
 
 
 function authenticate(res, userId) {
@@ -16,9 +17,7 @@ function authenticate(res, userId) {
 
 export default Router()
 
-  .post('/register', async (req, res, next) => {
-    console.log('controllers/auth/register', req.body)
-
+  .post('/register', logRequest(), async (req, res, next) => {
     const { username, password, name } = req.body
     const userId = await create(username, password, name)
 
@@ -30,9 +29,7 @@ export default Router()
     }
   })
 
-  .post('/login', async (req, res, next) => {
-    console.log('controllers/auth/login', req.body)
-    
+  .post('/login', logRequest(), async (req, res, next) => {
     const { username, password } = req.body
     const userId = await matchCredencials(username, password)
 
@@ -44,8 +41,7 @@ export default Router()
     }
   })
 
-  .get('/logout', async (req, res, next) => {
-    console.log('controllers/auth/logout')
+  .get('/logout', logRequest(), async (req, res, next) => {
     unregister()
     res.send('')
   })

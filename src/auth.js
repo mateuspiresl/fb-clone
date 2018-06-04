@@ -1,8 +1,16 @@
 import jwtMiddleware from 'express-jwt'
+import { logAllowed } from './config'
 
 
 const SECRET_TOKEN = 'secret'
 const sessions = new Set()
+
+function log(name, ...args) {
+  if (logAllowed.queries) {
+    const tag = name.length > 0 ? `/${name}` : ''
+    console.log(`auth${tag}`, ...args)
+  }
+}
 
 export function middleware() {
   return jwtMiddleware({
@@ -10,7 +18,7 @@ export function middleware() {
     
     getToken(req) {
       const token = extractToken(req)
-      console.log('auth/authenticate', token, sessions.has(token))
+      log('authenticate', token, sessions.has(token))
       return token
       // Session store disabled for development
       // return sessions.has(token) ? token : null
@@ -19,14 +27,14 @@ export function middleware() {
 }
 
 export function register(token) {
-  console.log('auth/register', token)
+  log('register', token)
   sessions.add(token)
 }
 
 export function unregister() {
   return (req, res, next) => {
     const token = extractToken(req)
-    console.log('auth/logout', token)
+    log('logout', token)
     sessions.delete(token)
   }
 }

@@ -3,6 +3,7 @@ import axios from 'axios'
 import Database from '../../src/database'
 import * as User from '../../src/models/user'
 import app from '../../src/app.js'
+import '../index'
 
 
 const should = chai.should()

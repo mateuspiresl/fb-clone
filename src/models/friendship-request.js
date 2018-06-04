@@ -1,4 +1,5 @@
 import Database from '../database'
+import { logAllowed } from '../config'
 
 
 const db = new Database()
@@ -22,6 +23,12 @@ const findAllQuery = db.prepare(
   'WHERE `requested_id`=:requestedId;'
 )
 
+function log(name, ...args) {
+  if (logAllowed.queries) {
+    const tag = name.length > 0 ? `/${name}` : ''
+    console.log(`models/friendship-request${tag}`, ...args)
+  }
+}
 
 export const name = 'user_friendship_request'
 
@@ -34,7 +41,7 @@ export const name = 'user_friendship_request'
  * @returns {Promise<boolean>} True if the request was successfuly created, false otherwise.
  */
 export async function create(requesterId, requestedId) {
-  console.log('models/friendship-request/create', ...arguments)
+  log('create', ...arguments)
 
   try {
     const result = await db.query(createQuery({ requesterId, requestedId }))
@@ -52,7 +59,7 @@ export async function create(requesterId, requestedId) {
  * @returns {Promise<Array<string>>} The ids of the requesters.
  */
 export async function findAll(requestedId) {
-  console.log('models/friendship-request/findAll', ...arguments)
+  log('findAll', ...arguments)
 
   const result = await db.query(findAllQuery({ requestedId }))
   return result.map(request => request.requester_id)
@@ -65,7 +72,7 @@ export async function findAll(requestedId) {
  * @returns {Promise<boolean>} True if the request was removed, false otherwise.
  */
 export async function remove(requesterId, requestedId) {
-  console.log('models/friendship-request/remove', ...arguments)
+  log('remove', ...arguments)
 
   const params = { requesterId, requestedId }
   const result = await db.query(removeQuery(params))

@@ -167,6 +167,34 @@ INSERT INTO `user_friendship` (`user_a_id`, `user_b_id`)
 VALUES ({blocker}, {blocks})
 ```
 
+Get friends (IDs only)
+
+```sql
+SELECT * FROM (
+  SELECT `user_a_id` as `id` FROM `user_friendship` WHERE `user_b_id`=@user_id
+  UNION
+  SELECT `user_b_id` as `id` FROM `user_friendship` WHERE `user_a_id`=@user_id
+) f;
+```
+
+Get friends
+
+```sql
+SELECT u.`id`, u.`name`, u.`photo` FROM (
+  SELECT `user_a_id` as `id` FROM `user_friendship` WHERE `user_b_id`=@user_id
+  UNION
+  SELECT `user_b_id` as `id` FROM `user_friendship` WHERE `user_a_id`=@user_id
+) f INNER JOIN `user` AS u ON u.`id`=f.`id`;
+```
+
+Remove friend
+
+```sql
+DELETE FROM `user_friendship`
+WHERE (`user_a_id`=@user_a_id AND `user_b_id`=@user_b_id)
+  OR (`user_a_id`=@user_b_id AND `user_b_id`=@user_a_id);
+```
+
 ### Group
 
 Get group

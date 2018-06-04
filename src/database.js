@@ -1,6 +1,7 @@
 import mariasql from 'mariasql'
 
 
+const logSql = false
 let connectionInstance = null
 
 export default class Database {
@@ -18,6 +19,8 @@ export default class Database {
   }
 
   query(sql) {
+    if (logSql) console.log('SQL:', sql)
+    
     return new Promise((resolve, reject) => {
       this.connection.query(sql, (error, result) => {
         if (error) reject(error)
