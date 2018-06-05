@@ -274,11 +274,7 @@ Create post for user feed
   - Can be the same of author, if someone is posting in his own feed.
 
 ```sql
-INSERT INTO `post` (`author_id`, `content`, `photo`, `is_public`)
-VALUES ({author}, {content}, {photo}, {is_public})
-
-INSERT INTO `feed_post` (`post_id`, `user_id`)
-VALUES (LAST_INSERT_ID(), {user})
+INSERT INTO `post` (`author_id`, `content`) VALUES ('4612', 'c'); SELECT * FROM `post` WHERE `id`=LAST_INSERT_ID();
 ```
 
 Create post for group feed
@@ -290,11 +286,22 @@ Create post for group feed
 - `group`: the group that received
 
 ```sql
-INSERT INTO `post` (`author_id`, `content`, `photo`, `is_public`)
+INSERT INTO `post` (`author_id`, `content`, `picture`, `is_public`)
 VALUES ({author}, {content}, {photo}, {is_public})
 
 INSERT INTO `group_post` (`post_id`, `group_id`)
 VALUES (LAST_INSERT_ID(), {group})
+
+###
+
+BEGIN TRANSACTION
+  DECLARE @inserted_id int;
+  INSERT INTO `post` (`author_id`, `content`, `photo`, `is_public`)
+    VALUES (@authorId, @content, @photo, @isPublic);
+  SELECT @inserted_id = scope_identity();
+  INSERT INTO `group_post` (`post_id`, `group_id`)
+    VALUES (@inserted_id, @groupId);
+COMMIT
 ```
 
 Remove post

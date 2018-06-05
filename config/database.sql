@@ -41,15 +41,13 @@ CREATE TABLE IF NOT EXISTS `post` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `author_id` int(11) NOT NULL,
   `content` varchar(4096) DEFAULT NULL,
-  `photo` varchar(256) DEFAULT NULL,
+  `picture` varchar(256) DEFAULT NULL,
   `is_public` boolean DEFAULT 1,
   PRIMARY KEY (`id`),
-  CONSTRAINT `author` FOREIGN KEY (`author_id`) REFERENCES `user`(`id`),
-);
-
-CREATE TABLE IF NOT EXISTS `feed_post` (
-  `post_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL
+  CONSTRAINT `authorship` FOREIGN KEY (`author_id`) REFERENCES `user`(`id`),
+  CONSTRAINT `minimum_content` CHECK (
+    `content` IS NOT NULL OR `picture` IS NOT NULL
+  )
 );
 
 CREATE TABLE IF NOT EXISTS `group_post` (
