@@ -62,7 +62,35 @@ describe.only('Models | Group', () => {
     })
   })
 
-  it.only('remove group created by an user', async () => {
+  it('get all existent groups', async () => {
+    const testUserId1 = await insertUser('testUser1')
+    const testUserId2 = await insertUser('testUser2')
+
+    const testGroupNames = ['A', 'B', 'C', 'D', 'E']
+
+    await testGroupNames.mapAsync(async testName => {
+      const user1GroupCreationResult = await insertGroup(testUserId1, testName)
+      const user2GroupCreationResult = await insertGroup(testUserId2, testName)
+      should.exist(user1GroupCreationResult)
+      should.exist(user2GroupCreationResult)
+    })
+
+    const groups = await Group.findAll()
+    should.exist(groups)
+    groups.should.be.an('array').that.has.length(10)
+
+    groups.forEach(group => {
+      group.should.be.an('object')
+      group.should.have.property('id')
+      group.should.have.property('creator_id')
+      group.should.have.property('name')
+      group.should.have.property('description')
+      group.should.have.property('picture')
+      testGroupNames.should.include(group.name.substr(0, 1))
+    })
+  })
+
+  it('remove group created by an user', async () => {
     const creatorUserId = await insertUser('TestUserName');
     const createdGroupId = await insertGroup(creatorUserId, 'TestGroupName')
 

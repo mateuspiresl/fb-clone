@@ -18,6 +18,10 @@ const findAllByCreatorQuery = db.prepare(
   'SELECT * FROM `group` WHERE creator_id=:user_id;'
 )
 
+const findAllQuery = db.prepare(
+  'SELECT * FROM `group`;'
+)
+
 export const name = 'group'
 
 /**
@@ -58,6 +62,15 @@ export async function findAllByCreator(creatorId) {
   return await db.query(findAllByCreatorQuery(params))
 }
 
+
+/**
+ * Returns all the existent groups.
+ * @returns {Promise<Array<string>>} The ids of all existent groups.
+ */
+export async function findAll() {
+  log('findAll', ...arguments)
+  return await db.query(findAllQuery())
+}
 
 /**
  * Removes a group created by an User.
