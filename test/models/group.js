@@ -15,6 +15,10 @@ function insertUser(name) {
   return User.create(`${name}n`, `${name}p`, name)
 }
 
+function insertGroup(creatorId, name) {
+  return Group.create(creatorId, `${name}n`, `${name}d`, `${name}p`)
+}
+
 describe.only('Models | Group', () => {
   before(async () => {
     // Create the users for testing
@@ -24,7 +28,7 @@ describe.only('Models | Group', () => {
   afterEach(() => db.clear(Group.name))
   after(() => db.clear(User.name))
 
-  it.only('create group', async () => {
+  it('create group', async () => {
     await creatorsIds.mapAsync(async id => {
       const result = await Group.create(id, 'name', 'description', 'picture')
       should.exist(result)
@@ -32,41 +36,32 @@ describe.only('Models | Group', () => {
     })
   })
 
-  it('get all groups', async () => {
-    await Promise.all(creatorsIds.map(id => Group.create(selfId, id)))
+  it.only('get all groups created by user', async () => {
+    const testUserId = await insertUser('testUser')
+    const testGroupNames = ['A', 'B', 'C', 'D', 'E']
 
-    const friends = await Group.findAll(selfId)
-    should.exist(friends)
-    friends.should.be.an('array').that.has.length(3)
-
-    friends.forEach(user => {
-      user.should.be.an('object')
-      user.should.have.property('id')
-      user.should.have.property('name')
-      user.should.have.property('photo')
-      creatorsIds.should.include(user.id)
+    await testGroupNames.mapAsync(async testName => {
+      const result = await insertGroup(testUserId, testName)
+      should.exist(result)
+      result.should.be.true
     })
+
+    const groups = await Group.findAllByCreator(testUserId)
+    should.exist(groups)
+    groups.should.be.an('array').that.has.length(5)
+
+    groups.forEach(group => {
+      group.should.be.an('object')
+      group.should.have.property('id')
+      group.should.have.property('creator_id')
+      group.should.have.property('name')
+      group.should.have.property('description')
+      group.should.have.property('picture')
+      testGroupNames.should.include(group.name.substr(0, 1))
+      group.creator_id.should.equal(testUserId)
+    })
+
+    console.log('After')
   })
 
-  it('remove group', async () => {
-    await Promise.all(creatorsIds.mapAsync(id => Group.create(selfId, id)))
-
-    // Remove
-    {
-      (await creatorsIds.mapAsync(id => Group.remove(selfId, id)))
-      .forEach(success => {
-        success.should.be.a('boolean')
-        success.should.be.true
-      })
-    }
-
-    // Try to remove the same
-    {
-      (await creatorsIds.mapAsync(id => Group.remove(selfId, id)))
-      .forEach(success => {
-        success.should.be.a('boolean')
-        success.should.be.false
-      })
-    }
-  })
 })
