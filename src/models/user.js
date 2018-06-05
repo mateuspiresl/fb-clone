@@ -7,33 +7,33 @@ const db = new Database()
 const log = createLogger('models/user', logAllowed.queries)
 
 const createQuery = db.prepare(
-  'INSERT INTO `user` (`username`, `password`, `name`) ' +
+  'INSERT INTO user (username, password, name) ' +
   'VALUES (:username, :password, :name);'
 )
 
 const updateQuery = db.prepare(
-  'UPDATE `user` SET ' +
-  '`name`=IF(:name IS NULL, `name`, :name), ' +
-  '`birthdate`=IF(:birthdate IS NULL, `birthdate`, :birthdate), ' +
-  '`photo`=IF(:photo IS NULL, `photo`, :photo) ' +
-  'WHERE `id`=:selfId'
+  'UPDATE user SET ' +
+  'name=IF(:name IS NULL, name, :name), ' +
+  'birthdate=IF(:birthdate IS NULL, birthdate, :birthdate), ' +
+  'photo=IF(:photo IS NULL, photo, :photo) ' +
+  'WHERE id=:selfId'
 )
 
 const matchCredencialsQuery = db.prepare(
-  'SELECT `id` FROM `user`' +
-  'WHERE `username`=:username AND `password`=:password;'
+  'SELECT id FROM user ' +
+  'WHERE username=:username AND password=:password;'
 )
 
 const findByIdQuery = db.prepare(
-  'SELECT u.`id`, u.`username`, u.`name` FROM `user` as u ' +
-  'LEFT JOIN `user_blocking` as ub ON u.`id`=ub.`blocker_id` ' +
-  'WHERE u.`id`=:userId AND (ub.`blocker_id` IS NULL OR ub.`blocked_id`!=:selfId);'
+  'SELECT u.id, u.username, u.name FROM user as u ' +
+  'LEFT JOIN user_blocking as ub ON u.id=ub.blocker_id ' +
+  'WHERE u.id=:userId AND (ub.blocker_id IS NULL OR ub.blocked_id!=:selfId);'
 )
 
 const findAllQuery = db.prepare(
-  'SELECT u.`id`, u.`username`, u.`name` FROM `user` as u ' +
-  'LEFT JOIN `user_blocking` as ub ON u.`id`=ub.`blocker_id` ' +
-  'WHERE u.`id`!=:selfId AND (ub.`blocker_id` IS NULL OR ub.`blocked_id`!=:selfId);'
+  'SELECT u.id, u.username, u.name FROM user as u ' +
+  'LEFT JOIN user_blocking as ub ON u.id=ub.blocker_id ' +
+  'WHERE u.id!=:selfId AND (ub.blocker_id IS NULL OR ub.blocked_id!=:selfId);'
 )
 
 export const name = 'user'
@@ -108,7 +108,5 @@ export async function findById(selfId, userId) {
  */
 export async function findAll(selfId) {
   log('', selfId)
-
-  const result = await db.query(findAllQuery({ selfId }))
-  return result
+  return db.query(findAllQuery({ selfId }))
 }

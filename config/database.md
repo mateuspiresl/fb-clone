@@ -151,10 +151,10 @@ Accept friendship request
 @remove_friendship_request
 
 INSERT INTO `user_friendship` (`user_a_id`, `user_b_id`)
-SELECT :user_a_id, :user_b_id FROM dual
+SELECT {user_a_id}, {user_b_id} FROM dual
 WHERE NOT EXISTS (
   SELECT * FROM `user_friendship`
-  WHERE `user_a_id`=:user_b_id AND `user_b_id`=:user_a_id
+  WHERE `user_a_id`={user_b_id} AND `user_b_id`={user_a_id}
 )
 ```
 
@@ -167,16 +167,23 @@ WHERE (?, ?)
 
 Block user
 
-- `blocker`: user who blocks
-- `blocked`: blocked user
+- `@blocker`: user who blocks
+- `@blocked`: blocked user
 
 ```sql
 DELETE FROM `user_friendship`
-WHERE `user_a_id`={blocker} AND `user_b_id`={blocked}
-OR `user_a_id`={blocked} AND `user_b_id`={blocker}
+WHERE `user_a_id`=@blocker AND `user_b_id`=@blocked
+OR `user_a_id`=@blocked AND `user_b_id`=@blocker
 
-INSERT INTO `user_friendship` (`user_a_id`, `user_b_id`)
-VALUES ({blocker}, {blocks})
+INSERT INTO `user_blocking` (`blocker_id`, `blocked_id`)
+VALUES (@blocker, @blocked)
+```
+
+Unblock user
+
+```sql
+DELETE FROM `user_blocking`
+WHERE `blocker_id`=@blocker AND `blocked_id`=@blocked
 ```
 
 Get friends (IDs only)
