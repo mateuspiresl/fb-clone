@@ -10,6 +10,10 @@ const createQuery = db.prepare(
   'VALUES (:creatorId, :name, :description, :picture);'
 )
 
+const removeQuery = db.prepare(
+  'DELETE FROM `group` WHERE id=:group_id AND creator_id=:creator_id;'
+)
+
 const findAllByCreatorQuery = db.prepare(
   'SELECT * FROM `group` WHERE creator_id=:user_id;'
 )
@@ -33,10 +37,10 @@ export async function create(creatorId, name, description, picture) {
         picture
     }
     const result = await db.query(createQuery(params))
-    return result.info.affectedRows == '1'
+    return result.info.insertId || null
   }
   catch (error) {
-    if (error.code === 1062) return false
+    if (error.code === 1062) return null
     else throw error
   }
 }
@@ -52,4 +56,24 @@ export async function findAllByCreator(creatorId) {
 
   const params = { user_id: creatorId }
   return await db.query(findAllByCreatorQuery(params))
+}
+
+
+/**
+ * Removes a group created by an User.
+ * @param {string} creatorId The id of the group creator.
+ * @param {string} groupId The id of the group.
+ * @returns {Promise<boolean>} True if the group was removed, false otherwise.
+ */
+export async function remove(creatorId, groupId) {
+  log('remove group created by an user', ...arguments)
+  
+  const params = {
+    creator_id: creatorId,
+    group_id: groupId
+  }
+
+  console.log(params)
+  const result = await db.query(removeQuery(params))
+  return result.info.affectedRows == '1'
 }

@@ -36,7 +36,7 @@ describe.only('Models | Group', () => {
     })
   })
 
-  it.only('get all groups created by user', async () => {
+  it('get all groups created by user', async () => {
     const testUserId = await insertUser('testUser')
     const testGroupNames = ['A', 'B', 'C', 'D', 'E']
 
@@ -60,8 +60,25 @@ describe.only('Models | Group', () => {
       testGroupNames.should.include(group.name.substr(0, 1))
       group.creator_id.should.equal(testUserId)
     })
+  })
 
-    console.log('After')
+  it.only('remove group created by an user', async () => {
+    const creatorUserId = await insertUser('TestUserName');
+    const createdGroupId = await insertGroup(creatorUserId, 'TestGroupName')
+
+    // Remove
+    {
+      const groupDeletionResult = await Group.remove(creatorUserId, createdGroupId)
+      groupDeletionResult.should.be.a('boolean')
+      groupDeletionResult.should.be.true
+    }
+
+    // Try to remove the same
+    {
+      const groupDeletionResult = await Group.remove(creatorUserId, createdGroupId)
+      groupDeletionResult.should.be.a('boolean')
+      groupDeletionResult.should.be.false
+    }
   })
 
 })
