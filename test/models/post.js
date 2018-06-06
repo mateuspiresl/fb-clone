@@ -63,7 +63,7 @@ describe.only('Models | Post', () => {
 
   it('create post', async () => {
     const content = 'c'
-    const postId = await Post.create(selfId, content)
+    const postId = await Post.create(selfId, { content })
     should.exist(postId)
     postId.should.be.an('string')
 
@@ -73,7 +73,7 @@ describe.only('Models | Post', () => {
 
   it('create post with only the picture', async () => {
     const picture = 'p'
-    const postId = await Post.create(selfId, null, picture)
+    const postId = await Post.create(selfId, { picture })
     should.exist(postId)
     postId.should.be.an('string')
 
@@ -93,11 +93,25 @@ describe.only('Models | Post', () => {
 
   it('find by id', async () => {
     const contents = ['a', 'b', 'c']
-    const postIds = await contents.mapAsync(content => Post.create(selfId, content))
+    const postIds = await contents.mapAsync(content => Post.create(selfId, { content }))
 
     await postIds.mapAsync(async (id, index) => {
       const post = await Post.findById(selfId, id)
       validate(post, { id, content: contents[index], picture: null })
+    })
+  })
+
+  it('should not find private post by id', async () => {
+    const postIds = await ids.mapAsync(id =>
+      Post.create(id, { content: 'c', isPublic: false })
+    )
+
+    await postIds.mapAsync(async (id, index) => {
+      const post = await Post.findById(ids[index], id)
+      validate(post, { id, content: 'c', picture: null, isPublic: false })
+
+      const nothing = await Post.findById(selfId, id)
+      should.not.exist(nothing)
     })
   })
 
@@ -107,7 +121,7 @@ describe.only('Models | Post', () => {
     
     await ids.mapAsync(async authorId =>
       postIds[authorId] = await contents.mapAsync(
-        content => Post.create(authorId, content)
+        content => Post.create(authorId, { content })
       )
     )
 
@@ -126,14 +140,48 @@ describe.only('Models | Post', () => {
     })
   })
 
+  it('should not find private posts by author', async () => {
+    const contents = ['a', 'b', 'c']
+    const postIds = {}
+    
+    await ids.mapAsync(async authorId =>
+      postIds[authorId] = await contents.mapAsync((content, index) =>
+        Post.create(authorId, { content, isPublic: index === 0 })
+      )
+    )
+
+    await ids.mapAsync(async (authorId, authorIndex) => {
+      const posts = await Post.findByAuthor(selfId, authorId)
+      should.exist(posts)
+      posts.should.be.an('array').that.has.length(1)
+
+      const post = posts[0]
+      validate(post, {
+        content: contents[0],
+        picture: null,
+        name: names[authorIndex]
+      })
+    })
+  })
+
   it('remove', async () => {
     const contents = ['a', 'b', 'c']
     const postIds = await contents.mapAsync(content =>
-      Post.create(selfId, content)
+      Post.create(selfId, { content })
     )
 
     await postIds.mapAsync(async id =>
       (await Post.remove(selfId, id)).should.be.true
+    )
+  })
+
+  it('not authors should not remove a post', async () => {
+    const postIds = await ids.mapAsync(id =>
+      Post.create(id, { content: 'c' })
+    )
+
+    await postIds.mapAsync(async id =>
+      (await Post.remove(selfId, id)).should.be.false
     )
   })
 })

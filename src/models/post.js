@@ -4,7 +4,7 @@ import { createLogger } from '../utils'
 
 
 const db = new Database()
-const log = createLogger('models/feed-post', logAllowed.queries)
+const log = createLogger('models/post', logAllowed.queries)
 
 const createQuery = db.prepare(
   'INSERT INTO post (author_id, content, picture, is_public) ' +
@@ -40,7 +40,7 @@ export const name = 'post'
  * @param {boolean} isPublic Post privacy, public (true) by default.
  * @returns {Promise<string>} The post data.
  */
-export async function create(selfId, content=null, picture=null, isPublic=true) {
+export async function create(selfId, { content=null, picture=null, isPublic=true }) {
   log('create', ...arguments)
 
   const params = { selfId, content, picture, isPublic: isPublic ? 1 : 0 }
