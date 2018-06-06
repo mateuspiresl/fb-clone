@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS `group` (
 CREATE TABLE IF NOT EXISTS `group_post` (
   `post_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
+  PRIMARY KEY (`post_id`),
   CONSTRAINT `itself` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE,
   CONSTRAINT `belonging` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
