@@ -69,13 +69,13 @@ CREATE TABLE IF NOT EXISTS `comment` (
 
 -- DO NOT INCLUDE THIS TRIGGER !!!
 -- The hard approach for deleted user: allows a comment to exist even if the user is deleted.
-CREATE TRIGGER `unauthored_comment`
-BEFORE INSERT ON `comment` FOR EACH ROW
-BEGIN
-  IF (NEW.`user_id` IS NULL) THEN
-    SIGNAL SQLSTATE '99900' SET MESSAGE_TEXT='The comment author can not be NULL';
-  END IF;
-END;
+-- CREATE TRIGGER `unauthored_comment`
+-- BEFORE INSERT ON `comment` FOR EACH ROW
+-- BEGIN
+--   IF (NEW.`user_id` IS NULL) THEN
+--     SIGNAL SQLSTATE '99900' SET MESSAGE_TEXT='The comment author can not be NULL';
+--   END IF;
+-- END;
 
 CREATE TABLE IF NOT EXISTS `comment_answer` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -89,20 +89,20 @@ CREATE TABLE IF NOT EXISTS `comment_answer` (
 
 -- DO NOT INCLUDE THIS TRIGGER !!!
 -- The hard approach for deleted user: allows a comment answer to exist even if the user is deleted.
-CREATE TRIGGER `unauthored_comment_answer`
-BEFORE INSERT ON `comment_answer` FOR EACH ROW
-BEGIN
-  IF (NEW.`user_id` IS NULL) THEN
-    SIGNAL SQLSTATE '99900' SET MESSAGE_TEXT='The comment author can not be NULL';
-  END IF;
-END;
+-- CREATE TRIGGER `unauthored_comment_answer`
+-- BEFORE INSERT ON `comment_answer` FOR EACH ROW
+-- BEGIN
+--   IF (NEW.`user_id` IS NULL) THEN
+--     SIGNAL SQLSTATE '99900' SET MESSAGE_TEXT='The comment author can not be NULL';
+--   END IF;
+-- END;
 
 CREATE TABLE IF NOT EXISTS `group` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `creator_id` int(11) NOT NULL,
-  `name` int(128) NOT NULL,
-  `description` int(512) NOT NULL DEFAULT '',
-  `picture` int(256),
+  `name` varchar(128) NOT NULL,
+  `description` varchar(512) NOT NULL DEFAULT '',
+  `picture` varchar(256),
   PRIMARY KEY (`id`),
   CONSTRAINT `creator` FOREIGN KEY (`creator_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 );
