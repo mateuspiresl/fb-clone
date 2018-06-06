@@ -23,7 +23,7 @@ function insertGroup(creatorId, name) {
   return Group.create(creatorId, `${name}n`, `${name}d`, `${name}p`)
 }
 
-describe('Models | GroupMembership', () => {
+describe.only('Models | GroupMembership', () => {
   before(async () => {
     // Create the users for testing
     groupCreatorUserId = await insertUser('GroupAuthorUser')
@@ -50,12 +50,23 @@ describe('Models | GroupMembership', () => {
     should.exist(membershipCreationResult)
   })
 
-  it('membership removal / deletion', async () => {
+  it('membership listing', async () => {
     const membershipCreationResult = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
-    should.exist(membershipCreationResult)
+    const membershipListingnResult = await GroupMembership.list(groupId)
+    should.exist(membershipListingnResult)
+    membershipListingnResult.should.be.an('array').that.has.length(1)
+  })
 
+  it('membership removal / deletion', async () => {
+    // create the membership
+    const membershipCreationResult = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
     const membershipDeletionResult = await GroupMembership.remove(groupRequesterId, groupId)
     should.exist(membershipDeletionResult)
+
+    // The listing test should return 0 elements.
+    const membershipListingnResult = await GroupMembership.list(groupId)
+    should.exist(membershipListingnResult)
+    membershipListingnResult.should.be.an('array').that.has.length(0)
   })
 
 })

@@ -22,7 +22,12 @@ const removeQuery = db.prepare(
   'DELETE FROM group_membership WHERE user_id=:userId AND group_id=:groupId;'
 )
 
+const listQuery = db.prepare(
+  'SELECT * FROM group_membership WHERE group_id=:groupId;'
+)
+
 export const name = 'group_membership'
+
 
 /**
  * Creates a group membership.
@@ -45,6 +50,7 @@ export async function create(acceptantId, requesterId, groupId) {
   }
 }
 
+
 /**
  * Removes a group membership.
  * @param {string} userId The id of the member user.
@@ -64,3 +70,22 @@ export async function remove(userId, groupId) {
     else throw error
   }
 }
+
+
+/**
+ * Lists all group memberships.
+ * @param {string} groupId The id of the group.
+ * @returns {Promise<Array<string>>} True if the request was successful.
+ */
+export async function list(groupId) {
+  log('list group membership', ...arguments)
+
+  try {
+    return await db.query(listQuery({ groupId }))
+  }
+  catch (error) {
+    if (error.code === 1062) return false
+    else throw error
+  }
+}
+
