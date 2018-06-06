@@ -7,7 +7,7 @@
     "build": "babel src -d dist",
     "serve": "node dist/index.js",
     "test": "mocha --recursive",
-    "posttest": "grep '.only' test/**/*.js || true"
+    "posttest": "grep '\\.only' test/**/*.js || true"
   },
   "author": "Mateus Pires, Ícaro Magalhães",
   "license": "ISC",
