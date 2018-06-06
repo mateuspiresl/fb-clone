@@ -49,7 +49,7 @@ function validate(post, data) {
   else if (picture === null) should.not.exist(post.picture)
 }
 
-describe.only('Models | Post', () => {
+describe('Models | Post', () => {
   before(async () => {
     // Create the users for testing
     const insertions = names.map(name => insertUser(name))
