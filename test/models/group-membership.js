@@ -23,7 +23,7 @@ function insertGroup(creatorId, name) {
   return Group.create(creatorId, `${name}n`, `${name}d`, `${name}p`)
 }
 
-describe.only('Models | GroupMembership', () => {
+describe('Models | GroupMembership', () => {
   before(async () => {
     // Create the users for testing
     groupCreatorUserId = await insertUser('GroupAuthorUser')
@@ -46,6 +46,16 @@ describe.only('Models | GroupMembership', () => {
   })
 
   it('membership creation / acceptance from membership request by group owner', async () => {
+    const membershipCreationResult = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
+    should.exist(membershipCreationResult)
+  })
+
+  it('membership removal / deletion', async () => {
+    const membershipCreationResult = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
+    should.exist(membershipCreationResult)
+
+    const membershipDeletionResult = await GroupMembership.remove(groupRequesterId, groupId)
+    should.exist(membershipDeletionResult)
   })
 
 })
