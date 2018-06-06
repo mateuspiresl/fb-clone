@@ -97,7 +97,8 @@ describe('Models | Comment', () => {
         .forEach((comment, commentIndex) =>
           validate(comment, {
             user_id: sortedIds[userIndex],
-            content: contents[commentIndex]
+            content: contents[commentIndex],
+            name: names[userIndex]
           })
         )
     )

@@ -8,12 +8,14 @@ import * as Friendship from '../src/models/friendship'
 import * as FriendshipRequest from '../src/models/friendship-request'
 import * as Post from '../src/models/post'
 import * as Comment from '../src/models/comment'
+import * as CommentAnswer from '../src/models/comment-answer'
 import '../src/utils'
 
 
 const db = new Database()
 
 async function clearAll() {
+  await db.clear(CommentAnswer.name)
   await db.clear(Comment.name)
   await db.clear(Post.name)
   await db.clear(FriendshipRequest.name)
