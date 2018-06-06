@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS `group_membership` (
   `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   `is_admin` boolean DEFAULT 0,
+  PRIMARY KEY (`user_id`, `group_id`),
   CONSTRAINT `membership` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
   CONSTRAINT `membership_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
@@ -122,6 +123,7 @@ CREATE TABLE IF NOT EXISTS `group_membership` (
 CREATE TABLE IF NOT EXISTS `group_blocking` (
   `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_id`, `group_id`),
   CONSTRAINT `blocked_user` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
   CONSTRAINT `blocking_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
@@ -129,6 +131,7 @@ CREATE TABLE IF NOT EXISTS `group_blocking` (
 CREATE TABLE IF NOT EXISTS `group_membership_request` (
   `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_id`, `group_id`),
   CONSTRAINT `membership_requester` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
   CONSTRAINT `requested_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );

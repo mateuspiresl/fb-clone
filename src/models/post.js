@@ -38,7 +38,7 @@ export const name = 'post'
  * @param {string|null} content The content of the post.
  * @param {string|null} picture The picture of the post.
  * @param {boolean} isPublic Post privacy, public (true) by default.
- * @returns {Promise<string>} The post data.
+ * @returns {Promise<string>} The post id.
  */
 export async function create(selfId, { content=null, picture=null, isPublic=true }) {
   log('create', ...arguments)
@@ -46,11 +46,8 @@ export async function create(selfId, { content=null, picture=null, isPublic=true
   const params = { selfId, content, picture, isPublic: isPublic ? 1 : 0 }
   const result = await db.query(createQuery(params))
   
-  if (result.info.insertId) {
-    return result.info.insertId
-  } else {
-    throw new Error('Could not create the post')
-  }
+  if (result.info.insertId) return result.info.insertId
+  throw new Error('Could not create the post')
 }
 
 /**
