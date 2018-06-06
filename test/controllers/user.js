@@ -2,6 +2,7 @@ import chai from 'chai'
 import axios from 'axios'
 import Database from '../../src/database'
 import * as User from '../../src/models/user'
+import * as UserBlocking from '../../src/models/user-blocking'
 import app from '../../src/app.js'
 import '../index'
 
@@ -11,6 +12,7 @@ const db = new Database()
 const api = 'http://localhost:5000'
 const authRoute = `${api}/auth`
 const userRoute = `${api}/user`
+const blockRoute = `${userRoute}/block`
 
 let server = null
 let selfId = null
@@ -50,7 +52,7 @@ describe('Controllers | User', () => {
       // Create the users for testing
       (async () => {
         await db.clear(User.name)
-        ids = await Promise.all([1, 2].map(n => create(n)))
+        ids = await Promise.all([1, 2, 3].map(n => create(n)))
       })()
     ])
 
@@ -72,10 +74,10 @@ describe('Controllers | User', () => {
   })
 
   it('get user', async function () {
-    await Promise.all(ids.map(async id => {
+    await ids.mapAsync(async id => {
       const response = await axios.get(`${userRoute}/${id}`, { headers })
       validate(response.data)
-    }))
+    })
   })
 
   it('get all users', async function () {
@@ -83,7 +85,32 @@ describe('Controllers | User', () => {
     const users = response.data
 
     should.exist(users)
-    users.should.be.an('array').that.has.length(2)
+    users.should.be.an('array').that.has.length(ids.length)
     users.forEach(user => validate(user))
+  })
+
+  describe('Blocking', () => {
+    function clear() {
+      return db.clear(UserBlocking.name)
+    }
+    
+    before(clear)
+    afterEach(clear)
+
+    it('block user', async function () {
+      await ids.mapAsync(id => axios.post(blockRoute, { id }, { headers }))
+
+      const blocked = await UserBlocking.findAll(selfId)
+      blocked.should.have.length(ids.length)
+      blocked.forEach(user => ids.should.include(user.id))
+    })
+
+    it('unblock user', async function () {
+      await ids.mapAsync(id => UserBlocking.create(selfId, id))
+      await ids.mapAsync(id => axios.delete(`${blockRoute}/${id}`, { headers }))
+
+      const blocked = await UserBlocking.findAll(selfId)
+      blocked.should.be.empty
+    })
   })
 })

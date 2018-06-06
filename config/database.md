@@ -151,10 +151,10 @@ Accept friendship request
 @remove_friendship_request
 
 INSERT INTO `user_friendship` (`user_a_id`, `user_b_id`)
-SELECT :user_a_id, :user_b_id FROM dual
+SELECT {user_a_id}, {user_b_id} FROM dual
 WHERE NOT EXISTS (
   SELECT * FROM `user_friendship`
-  WHERE `user_a_id`=:user_b_id AND `user_b_id`=:user_a_id
+  WHERE `user_a_id`={user_b_id} AND `user_b_id`={user_a_id}
 )
 ```
 
@@ -167,16 +167,23 @@ WHERE (?, ?)
 
 Block user
 
-- `blocker`: user who blocks
-- `blocked`: blocked user
+- `@blocker`: user who blocks
+- `@blocked`: blocked user
 
 ```sql
 DELETE FROM `user_friendship`
-WHERE `user_a_id`={blocker} AND `user_b_id`={blocked}
-OR `user_a_id`={blocked} AND `user_b_id`={blocker}
+WHERE `user_a_id`=@blocker AND `user_b_id`=@blocked
+OR `user_a_id`=@blocked AND `user_b_id`=@blocker
 
-INSERT INTO `user_friendship` (`user_a_id`, `user_b_id`)
-VALUES ({blocker}, {blocks})
+INSERT INTO `user_blocking` (`blocker_id`, `blocked_id`)
+VALUES (@blocker, @blocked)
+```
+
+Unblock user
+
+```sql
+DELETE FROM `user_blocking`
+WHERE `blocker_id`=@blocker AND `blocked_id`=@blocked
 ```
 
 Get friends (IDs only)
@@ -267,11 +274,7 @@ Create post for user feed
   - Can be the same of author, if someone is posting in his own feed.
 
 ```sql
-INSERT INTO `post` (`author_id`, `content`, `photo`, `is_public`)
-VALUES ({author}, {content}, {photo}, {is_public})
-
-INSERT INTO `feed_post` (`post_id`, `user_id`)
-VALUES (LAST_INSERT_ID(), {user})
+INSERT INTO `post` (`author_id`, `content`) VALUES ('4612', 'c'); SELECT * FROM `post` WHERE `id`=LAST_INSERT_ID();
 ```
 
 Create post for group feed
@@ -283,11 +286,22 @@ Create post for group feed
 - `group`: the group that received
 
 ```sql
-INSERT INTO `post` (`author_id`, `content`, `photo`, `is_public`)
+INSERT INTO `post` (`author_id`, `content`, `picture`, `is_public`)
 VALUES ({author}, {content}, {photo}, {is_public})
 
 INSERT INTO `group_post` (`post_id`, `group_id`)
 VALUES (LAST_INSERT_ID(), {group})
+
+###
+
+BEGIN TRANSACTION
+  DECLARE @inserted_id int;
+  INSERT INTO `post` (`author_id`, `content`, `photo`, `is_public`)
+    VALUES (@authorId, @content, @photo, @isPublic);
+  SELECT @inserted_id = scope_identity();
+  INSERT INTO `group_post` (`post_id`, `group_id`)
+    VALUES (@inserted_id, @groupId);
+COMMIT
 ```
 
 Remove post

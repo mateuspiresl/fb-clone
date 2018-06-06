@@ -1,6 +1,7 @@
 import chai from 'chai'
 import Database from '../../src/database'
 import * as User from '../../src/models/user'
+import * as UserBlocking from '../../src/models/user-blocking'
 
 
 const should = chai.should()
@@ -18,13 +19,13 @@ function createSelf() {
 }
 
 describe('Models | User', () => {
-  let ids
+  let ids = null
+  let selfId = null
 
   beforeEach(async () => {
     await db.clear('user')
-
-    const insertions = names.map(name => insertUser(name))
-    ids = await Promise.all(insertions)
+    ids = await names.mapAsync(name => insertUser(name))
+    selfId = await insertUser('Z')
   })
 
   after(() => db.clear('user'))
@@ -37,7 +38,7 @@ describe('Models | User', () => {
     const id = parseInt(userId)
     id.should.be.above(0)
 
-    const found = await User.findById(await createSelf(), userId)
+    const found = await User.findById(selfId, userId)
     should.exist(found)
   })
 
@@ -82,18 +83,16 @@ describe('Models | User', () => {
   })
 
   it('match credencials', async () => {
-    await Promise.all(names.map(async name => {
+    await names.mapAsync(async name => {
       const userId = await User.matchCredencials(`${name}n`, `${name}p`)
       should.exist(userId)
       userId.should.be.a('string')
       ids.should.include(userId)
-    }))
+    })
   })
 
   it('find one', async () => {
-    const selfId = await createSelf()
-
-    await Promise.all(ids.map(async id => {
+    await ids.mapAsync(async id => {
       const user = await User.findById(selfId, id)
       should.exist(user)
       user.should.be.an('object')
@@ -101,17 +100,17 @@ describe('Models | User', () => {
       user.should.have.property('username')
       user.should.have.property('name')
       user.id.should.equal(id)
-    }))
+    })
 
     const user = await User.findById(selfId, 999999)
     should.not.exist(user)
   })
 
   it('find all', async () => {
-    const users = await User.findAll(await createSelf())
+    const users = await User.findAll(selfId)
 
     await should.exist(users)
-    users.should.be.an('array').of.length(3)
+    users.should.be.an('array').of.length(ids.length)
 
     users.forEach(user => {
       user.should.be.an('object')
@@ -120,6 +119,38 @@ describe('Models | User', () => {
       user.should.have.property('name')
 
       ids.should.include(user.id)
+    })
+  })
+
+  describe('Blocking', () => {
+    function clear() {
+      return db.clear(UserBlocking.name)
+    }
+    
+    before(clear)
+    afterEach(clear)
+
+    it('find one should ignore blockers', async function () {
+      await ids.mapAsync(id => UserBlocking.create(id, selfId))
+      await ids.mapAsync(async id =>
+        should.not.exist(await User.findById(selfId, id))
+      )
+    })
+
+    it('find all should ignore blockers', async function () {
+      const users = await User.findAll(selfId)
+      users.should.have.length(ids.length)
+  
+      for (let index = 0; index < ids.length; index++) {
+        await UserBlocking.create(ids[index], selfId)
+  
+        const users = await User.findAll(selfId)
+        users.should.have.length(ids.length - index - 1)
+  
+        const usersIds = users.map(user => user.id)
+        const notBlocked = ids.slice(index + 1, ids.length)
+        usersIds.should.include.members(notBlocked)
+      }
     })
   })
 })
