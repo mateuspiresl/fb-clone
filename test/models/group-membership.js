@@ -23,7 +23,7 @@ function insertGroup(creatorId, name) {
   return Group.create(creatorId, `${name}n`, `${name}d`, `${name}p`)
 }
 
-describe.only('Models | GroupMembership', () => {
+describe('Models | GroupMembership', () => {
   before(async () => {
     // Create the users for testing
     groupCreatorUserId = await insertUser('GroupAuthorUser')
@@ -51,15 +51,15 @@ describe.only('Models | GroupMembership', () => {
   })
 
   it('membership listing', async () => {
-    const membershipCreationResult = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
+    await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
     const membershipListingnResult = await GroupMembership.list(groupId)
     should.exist(membershipListingnResult)
     membershipListingnResult.should.be.an('array').that.has.length(1)
   })
 
   it('membership removal / deletion', async () => {
-    // create the membership
-    const membershipCreationResult = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
+    // Create the membership
+    await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
     const membershipDeletionResult = await GroupMembership.remove(groupRequesterId, groupId)
     should.exist(membershipDeletionResult)
 
@@ -67,6 +67,21 @@ describe.only('Models | GroupMembership', () => {
     const membershipListingnResult = await GroupMembership.list(groupId)
     should.exist(membershipListingnResult)
     membershipListingnResult.should.be.an('array').that.has.length(0)
+  })
+
+  it('membership admin', async () => {
+    // Create the membership
+    const membershipId = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
+
+    // set as admin
+    await GroupMembership.setAdminStatus(true)
+    var membershipListingnResult = await GroupMembership.list(groupId)
+    membershipListingnResult[0].is_admin.should.equal('1')
+
+    // revoke admin status
+    await GroupMembership.setAdminStatus(false)
+    membershipListingnResult = await GroupMembership.list(groupId)
+    membershipListingnResult[0].is_admin.should.equal('0')
   })
 
 })

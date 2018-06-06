@@ -18,6 +18,11 @@ const createQuery = db.prepare(
   ');'
 )
 
+const setAdminQuery = db.prepare(
+  'UPDATE group_membership set ' + 
+  'is_admin=:isAdmin;'
+)
+
 const removeQuery = db.prepare(
   'DELETE FROM group_membership WHERE user_id=:userId AND group_id=:groupId;'
 )
@@ -79,7 +84,7 @@ export async function remove(userId, groupId) {
  */
 export async function list(groupId) {
   log('list group membership', ...arguments)
-
+  
   try {
     return await db.query(listQuery({ groupId }))
   }
@@ -89,3 +94,20 @@ export async function list(groupId) {
   }
 }
 
+
+/**
+ * Switch membership admin value.
+ * @param {string} membershipId The id of the group membership.
+ * @param {string} groupId The id of the group.
+ * @returns {Promise<boolean>} True if the request was successful.
+ */
+export async function setAdminStatus(isAdmin) {
+  log('list group membership', ...arguments)
+  try {
+    return await db.query(setAdminQuery({ isAdmin: (isAdmin ? 1 : 0) }))
+  }
+  catch (error) {
+    if (error.code === 1062) return false
+    else throw error
+  }
+}
