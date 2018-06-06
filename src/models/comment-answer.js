@@ -11,11 +11,11 @@ const createQuery = db.prepare(
   'VALUES (:selfId, :commentId, :content);'
 )
 
-const findByIdQuery = db.prepare(
+const findByCommentQuery = db.prepare(
   'SELECT ca.*, u.name as user_name, u.photo as user_photo ' + 
   'FROM comment_answer as ca ' +
-  'INNER JOIN user as u ON u.id=ca.user_id ' +
-  'WHERE ca.id=:answerId;'
+  'LEFT JOIN user as u ON u.id=ca.user_id ' +
+  'WHERE ca.comment_id=:commentId;'
 )
 
 const removeQuery = db.prepare(
@@ -44,14 +44,12 @@ export async function create(selfId, commentId, content) {
 
 /**
  * Gets all the answers of a comment.
- * @param {string} answerId The id of the answer.
- * @returns {Promise<object>} The answer data.
+ * @param {string} commentId The id of the comment.
+ * @returns {Promise<Array<object>>} The answers data.
  */
-export async function findById(answerId) {
-  log('findById', ...arguments)
-
-  const answer = await db.query(findByIdQuery({ answerId }))
-  return answer[0] || null
+export async function findByComment(commentId) {
+  log('findByComment', ...arguments)
+  return db.query(findByCommentQuery({ commentId }))
 }
 
 /**

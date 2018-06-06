@@ -23,15 +23,15 @@ function insertUser(name) {
   return User.create(`${name}n`, `${name}p`, name)
 }
 
-function validate(comment, data) {
-  should.exist(comment)
-  comment.should.have.property('id')
-  comment.should.be.an('object')
-  comment.should.have.property('user_id')
-  comment.should.have.property('comment_id')
-  comment.should.have.property('content')
-  comment.should.have.property('user_name')
-  comment.should.have.property('user_photo')
+function validate(answer, data) {
+  should.exist(answer)
+  answer.should.have.property('id')
+  answer.should.be.an('object')
+  answer.should.have.property('user_id')
+  answer.should.have.property('comment_id')
+  answer.should.have.property('content')
+  answer.should.have.property('user_name')
+  answer.should.have.property('user_photo')
 
   const {
     id,
@@ -41,15 +41,15 @@ function validate(comment, data) {
     name
   } = data
   
-  if (id) comment.id.should.equal(id)
-  if (userId) comment.userId.should.equal(userId)
-  if (commentId) comment.commentId.should.equal(commentId)
-  if (content) comment.content.should.equal(content)
-  if (name) comment.user_name.should.equal(name)
-  if (comment.user_photo) comment.user_photo.should.match(/p$/)
+  if (id) answer.id.should.equal(id)
+  if (userId) answer.user_id.should.equal(userId)
+  if (commentId) answer.comment_id.should.equal(commentId)
+  if (content) answer.content.should.equal(content)
+  if (name) answer.user_name.should.equal(name)
+  if (answer.user_photo) answer.user_photo.should.match(/p$/)
 }
 
-describe.only('Models | Comment Answer', () => {
+describe('Models | Comment Answer', () => {
   before(async () => {
     // Create the users for testing
     const insertions = names.map(name => insertUser(name))
@@ -73,23 +73,48 @@ describe.only('Models | Comment Answer', () => {
 
   it('create answer', async () => {
     const content = 'answer content'
-    const answers = await ids.mapAsync(async (id, userId) => ({
-      answerId: await CommentAnswer.create(id, commentId, content),
-      userName: names[userId]
-    }))
-
-    await answers.mapAsync(async ({ answerId, userName }) => {
+    const answersMeta = {}
+    
+    await ids.mapAsync(async (id, userIndex) => {
+      const answerId = await CommentAnswer.create(id, commentId, contents[userIndex])
       should.exist(answerId)
       answerId.should.be.a('string')
 
-      const answer = await CommentAnswer.findById(answerId)
-      validate(answer, {
-        postId,
-        answerId,
-        content,
-        name: userName
-      })
+      answersMeta[answerId] = userIndex
     })
+    
+    const answers = await CommentAnswer.findByComment(commentId)
+    answers.forEach(answer =>
+      answer.user_id.should.equal(ids[answersMeta[answer.id]])
+    )
+  })
+
+  it('find answers by comment', async () => {
+    await ids.mapAsync(async id =>
+      await contents.mapAsync(content =>
+        CommentAnswer.create(id, commentId, content)
+      )
+    )
+
+    const answers = await CommentAnswer.findByComment(commentId)
+    should.exist(answers)
+    answers.should.be.an('array')
+    answers.should.have.length(ids.length * contents.length)
+
+    const sortedIds = ids.sort()
+    sortedIds.forEach((id, userIndex) =>
+      answers
+        .filter(answer => answer.user_id == id)
+        .sort((a, b) => a.content.charCodeAt(0) - b.content.charCodeAt(0))
+        .forEach((answer, answerIndex) =>
+          validate(answer, {
+            userId: id,
+            commentId: commentId,
+            content: contents[answerIndex],
+            name: names[userIndex]
+          })
+        )
+    )
   })
 
   it('remove', async () => {
