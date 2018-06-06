@@ -26,6 +26,7 @@ describe('Models | GroupRequest', () => {
     // Create the users for testing
     groupCreatorUserId = await insertUser('GroupAuthorUser')
     groupRequesterId = await insertUser('GroupRequesterUser')
+
     // Create the group for testing
     groupId = await insertGroup(groupCreatorUserId, 'GroupName');
   })
@@ -41,16 +42,29 @@ describe('Models | GroupRequest', () => {
   it('request group membership creation', async () => {
       const result = await GroupRequest.create(groupCreatorUserId, groupId)
       should.exist(result)
-      result.should.be.true
   })
 
   it('group membership requests listing by group', async () => {
       const groupMembershipRequestCreationResult = await GroupRequest.create(groupRequesterId, groupId)
       should.exist(groupMembershipRequestCreationResult)
-      groupMembershipRequestCreationResult.should.be.true
+
       const result = await GroupRequest.findAllByGroup(groupId)
       result.should.be.an('array').that.has.length(1)
       result[0].user_id.should.equal(groupRequesterId)
+  })
+
+  it('group membership request cancel by the user', async () => {
+      const groupMembershipRequestCreationResult = await GroupRequest.create(groupRequesterId, groupId)
+      should.exist(groupMembershipRequestCreationResult)
+
+      var gropMembershipListingResult = await GroupRequest.findAllByGroup(groupId)
+      gropMembershipListingResult.should.be.an('array').that.has.length(1)
+
+      const groupRemovalResult = await GroupRequest.remove(groupRequesterId, groupId)
+      groupRemovalResult.should.be.an('boolean')
+
+      gropMembershipListingResult = await GroupRequest.findAllByGroup(groupId)
+      gropMembershipListingResult.should.be.an('array').that.has.length(0)
   })
 
 })

@@ -28,7 +28,8 @@ docker run --name fb-clone -e MYSQL_ROOT_PASSWORD=pw -d mariadb
 To stop the MariaDB server (**DON'T DO THIS NOW**):
 
 ```bash
-docker stop fb-clone
+ducker start fb-clone # If it is not running yet
+docker stop fb-clone # If it is already runnung
 ```
 
 For more details, check [this](https://mariadb.com/kb/en/library/installing-and-using-mariadb-via-docker/).

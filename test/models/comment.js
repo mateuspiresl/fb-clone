@@ -46,7 +46,7 @@ function validate(comment, data) {
   if (comment.user_photo) comment.user_photo.should.match(/p$/)
 }
 
-describe.only('Models | Comment', () => {
+describe('Models | Comment', () => {
   before(async () => {
     // Create the users for testing
     const insertions = names.map(name => insertUser(name))

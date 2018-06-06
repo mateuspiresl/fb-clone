@@ -11,14 +11,14 @@ const createQuery = db.prepare(
   'VALUES (:requesterId, :groupId);'
 )
 
-// const removeQuery = db.prepare(
-//   'DELETE FROM group_membership_request ' +
-//   'WHERE user_id=:requesterId AND group_id=:groupId;'
-// )
+const removeQuery = db.prepare(
+  'DELETE FROM group_membership_request ' +
+  'WHERE user_id=:userId AND group_id=:groupId;'
+)
 
-// const findAllByRequesterQuery = db.prepare(
-//   'SELECT * FROM group_membership_request WHERE user_id=:user_id;'
-// )
+const findAllByRequesterQuery = db.prepare(
+  'SELECT * FROM group_membership_request WHERE user_id=:user_id;'
+)
 
 const findAllByGroupQuery = db.prepare(
   'SELECT g.*, u.name as user_name, u.photo as user_photo ' +
@@ -48,12 +48,26 @@ export async function create(requesterId, groupId) {
   try {
     const params = { requesterId, groupId }
     const result = await db.query(createQuery(params))
-    return result.info.affectedRows == '1'
+    return result.info.insertId || null
   }
   catch (error) {
     if (error.code === 1062) return false
     else throw error
   }
+}
+
+/**
+ * Removes a group membership request.
+ * @param {string} userId The id of the actual requester.
+ * @param {string} groupId The id of the group.
+ * @returns {Promise<boolean>} True if the request was removed, false otherwise.
+ */
+export async function remove(userId, groupId) {
+  log('remove group request', ...arguments)
+
+  const params = { userId, groupId }
+  const result = await db.query(removeQuery(params))
+  return result.info.affectedRows == '1'
 }
 
 /**
@@ -65,6 +79,7 @@ export function findAllByGroup(groupId) {
   log('findAll group memberships by creator', ...arguments)
   return db.query(findAllByGroupQuery({ groupId }))
 }
+
 
 /**
  * Returns all membership requests created by a user.
