@@ -1,6 +1,7 @@
 import chai from 'chai'
 import Database from '../../src/database'
 import * as User from '../../src/models/user'
+import * as UserBlocking from '../../src/models/user-blocking'
 import * as FriendshipRequest from '../../src/models/friendship-request'
 import '../index'
 
@@ -25,7 +26,11 @@ describe('Models | FriendshipRequest', () => {
     selfId = await insertUser('Z')
   })
 
-  afterEach(() => db.clear(FriendshipRequest.name))
+  afterEach(async () => {
+    await db.clear(UserBlocking.name)
+    await db.clear(FriendshipRequest.name)
+  })
+
   after(() => db.clear(User.name))
 
   it('request friendship', async () => {
@@ -40,6 +45,14 @@ describe('Models | FriendshipRequest', () => {
   
   it('can not request the friendship of the user who requested the inverse', async () => {
     await FriendshipRequest.create(ids[0], ids[1])
+
+    const result = await FriendshipRequest.create(ids[1], ids[0])
+    should.exist(result)
+    result.should.be.false
+  })
+
+  it('can not request the friendship of a blocker', async () => {
+    await UserBlocking.create(ids[0], ids[1])
 
     const result = await FriendshipRequest.create(ids[1], ids[0])
     should.exist(result)

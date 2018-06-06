@@ -157,7 +157,3 @@ describe('Controllers | Friendship', () => {
     })
   })
 })
-
-process.on('uncaughtException', function(error) {
-  console.log(error)
-})

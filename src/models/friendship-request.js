@@ -11,7 +11,10 @@ const createQuery = db.prepare(
   'SELECT :requesterId, :requestedId FROM dual ' +
   'WHERE NOT EXISTS (' + 
     'SELECT * FROM user_friendship_request ' + 
-    'WHERE requester_id=:requestedId AND requested_id=:requesterId' +
+    'WHERE requester_id=:requestedId AND requested_id=:requesterId ' +
+    'UNION ' +
+    'SELECT * FROM user_blocking ' +
+    'WHERE blocked_id=:requesterId ' +
   ');'
 )
 
