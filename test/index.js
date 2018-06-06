@@ -1,6 +1,7 @@
 import Database from '../src/database'
 import * as User from '../src/models/user'
 import * as Group from '../src/models/group'
+import * as GroupRequest from '../src/models/group-request'
 import * as UserBlocking from '../src/models/user-blocking'
 import * as Friendship from '../src/models/friendship'
 import * as FriendshipRequest from '../src/models/friendship-request'
@@ -15,6 +16,7 @@ async function clearAll() {
   await db.clear(FriendshipRequest.name)
   await db.clear(Friendship.name)
   await db.clear(Group.name)
+  await db.clear(GroupRequest.name)
   await db.clear(UserBlocking.name)
   await db.clear(User.name)
 }

@@ -19,7 +19,7 @@ function insertGroup(creatorId, name) {
   return Group.create(creatorId, `${name}n`, `${name}d`, `${name}p`)
 }
 
-describe.only('Models | Group', () => {
+describe('Models | Group', () => {
   before(async () => {
     // Create the users for testing
     creatorsIds = await names.mapAsync(name => insertUser(name))
@@ -32,7 +32,6 @@ describe.only('Models | Group', () => {
     await creatorsIds.mapAsync(async id => {
       const result = await Group.create(id, 'name', 'description', 'picture')
       should.exist(result)
-      result.should.be.true
     })
   })
 
@@ -43,7 +42,6 @@ describe.only('Models | Group', () => {
     await testGroupNames.mapAsync(async testName => {
       const result = await insertGroup(testUserId, testName)
       should.exist(result)
-      result.should.be.true
     })
 
     const groups = await Group.findAllByCreator(testUserId)
