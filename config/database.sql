@@ -50,32 +50,25 @@ CREATE TABLE IF NOT EXISTS `post` (
   )
 );
 
-CREATE TABLE IF NOT EXISTS `group_post` (
-  `post_id` int(11) NOT NULL,
-  `group_id` int(11) NOT NULL,
-  CONSTRAINT `itself` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `belonging` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE,
-);
-
 CREATE TABLE IF NOT EXISTS `comment` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `post_id` int(11) NOT NULL,
   `content` varchar(1024) DEFAULT 1,
   PRIMARY KEY (`id`),
-  CONSTRAINT `commentator` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `commented` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE
+  CONSTRAINT `post_commentator` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `post_commented` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE
 );
 
 -- DO NOT INCLUDE THIS TRIGGER !!!
 -- The hard approach for deleted user: allows a comment to exist even if the user is deleted.
-CREATE TRIGGER `unauthored_comment`
-BEFORE INSERT ON `comment` FOR EACH ROW
-BEGIN
-  IF (NEW.`user_id` IS NULL) THEN
-    SIGNAL SQLSTATE '99900' SET MESSAGE_TEXT='The comment author can not be NULL';
-  END IF;
-END;
+-- CREATE TRIGGER `unauthored_comment`
+-- BEFORE INSERT ON `comment` FOR EACH ROW
+-- BEGIN
+--   IF (NEW.`user_id` IS NULL) THEN
+--     SIGNAL SQLSTATE '99900' SET MESSAGE_TEXT='The comment author can not be NULL';
+--   END IF;
+-- END;
 
 CREATE TABLE IF NOT EXISTS `comment_answer` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -83,26 +76,26 @@ CREATE TABLE IF NOT EXISTS `comment_answer` (
   `comment_id` int(11) NOT NULL,
   `content` varchar(1024) DEFAULT 1,
   PRIMARY KEY (`id`),
-  CONSTRAINT `commentator` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `commented` FOREIGN KEY (`comment_id`) REFERENCES `comment`(`id`) ON DELETE CASCADE
+  CONSTRAINT `comment_commentator` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `comment_commented` FOREIGN KEY (`comment_id`) REFERENCES `comment`(`id`) ON DELETE CASCADE
 );
 
 -- DO NOT INCLUDE THIS TRIGGER !!!
 -- The hard approach for deleted user: allows a comment answer to exist even if the user is deleted.
-CREATE TRIGGER `unauthored_comment_answer`
-BEFORE INSERT ON `comment_answer` FOR EACH ROW
-BEGIN
-  IF (NEW.`user_id` IS NULL) THEN
-    SIGNAL SQLSTATE '99900' SET MESSAGE_TEXT='The comment author can not be NULL';
-  END IF;
-END;
+-- CREATE TRIGGER `unauthored_comment_answer`
+-- BEFORE INSERT ON `comment_answer` FOR EACH ROW
+-- BEGIN
+--   IF (NEW.`user_id` IS NULL) THEN
+--     SIGNAL SQLSTATE '99900' SET MESSAGE_TEXT='The comment author can not be NULL';
+--   END IF;
+-- END;
 
 CREATE TABLE IF NOT EXISTS `group` (
   `id` int(11) NOT NULL,
   `creator_id` int(11) NOT NULL,
-  `name` int(128) NOT NULL,
-  `description` int(512) NOT NULL DEFAULT '',
-  `picture` int(256),
+  `name` varchar(128) NOT NULL,
+  `description` varchar(512) NOT NULL DEFAULT '',
+  `picture` varchar(256),
   PRIMARY KEY (`id`),
   CONSTRAINT `creator` FOREIGN KEY (`creator_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 );
@@ -111,25 +104,31 @@ CREATE TABLE IF NOT EXISTS `group` (
 -- inside a trigger on update that sets the creator_id to NULL. The member should be an admin,
 -- otherwise the group is deleted.
 
+CREATE TABLE IF NOT EXISTS `group_post` (
+  `post_id` int(11) NOT NULL,
+  `group_id` int(11) NOT NULL,
+  CONSTRAINT `itself` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `belonging` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS `group_membership` (
   `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   `is_admin` boolean DEFAULT 0,
   CONSTRAINT `membership` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `belonging` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
+  CONSTRAINT `membership_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `group_blocking` (
   `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
-  CONSTRAINT `blocked` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `from` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
+  CONSTRAINT `blocked_user` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `blocking_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `group_membership_request` (
   `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
-  CONSTRAINT `requester` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `on` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
+  CONSTRAINT `membership_requester` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `requested_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
-
