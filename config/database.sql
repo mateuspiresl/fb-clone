@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `comment_answer` (
 -- END;
 
 CREATE TABLE IF NOT EXISTS `group` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `creator_id` int(11) NOT NULL,
   `name` varchar(128) NOT NULL,
   `description` varchar(512) NOT NULL DEFAULT '',

@@ -39,7 +39,7 @@ export default Router()
     if (!requestRemoved) {
       throw new ApiError('Friendship request not found', 404)
     }
-    
+
     const friendshipCreated = await Friendship.create(selfId, requesterId)
     if (!friendshipCreated) {
       throw new ApiError('Could not accept the friendship request')
