@@ -52,8 +52,7 @@ function validate(answer, data) {
 describe('Models | Comment Answer', () => {
   before(async () => {
     // Create the users for testing
-    const insertions = names.map(name => insertUser(name))
-    ids = await Promise.all(insertions)
+    ids = await names.mapAsync(name => insertUser(name))
     selfId = await insertUser('Z')
 
     // Create the post for testing
@@ -101,8 +100,7 @@ describe('Models | Comment Answer', () => {
     answers.should.be.an('array')
     answers.should.have.length(ids.length * contents.length)
 
-    const sortedIds = ids.sort()
-    sortedIds.forEach((id, userIndex) =>
+    ids.forEach((id, userIndex) => {
       answers
         .filter(answer => answer.user_id == id)
         .sort((a, b) => a.content.charCodeAt(0) - b.content.charCodeAt(0))
@@ -114,7 +112,7 @@ describe('Models | Comment Answer', () => {
             name: names[userIndex]
           })
         )
-    )
+    })
   })
 
   it('remove', async () => {
