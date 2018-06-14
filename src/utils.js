@@ -24,3 +24,28 @@ export function createLogger(base, enabled) {
 Array.prototype.mapAsync = function (fn) {
   return Promise.all(this.map((...args) => fn(...args)))
 }
+
+Array.prototype.remove = function (value) {
+  return this.splice(this.indexOf(value), 1)[0]
+}
+
+Number.prototype.map = function (fn) {
+  const max = parseInt(this)
+  const result = []
+  for (let i = 0; i < max; i++) result.push(fn(i))
+  return result
+}
+
+Number.prototype.mapAsync = function (fn) {
+  return Promise.all(this.map(fn))
+}
+
+Number.prototype.repeat = function (fn) {
+  const max = parseInt(this)
+  for (let i = 0; i < max; i++) fn(i)
+}
+
+Number.prototype.repeatAsync = async function (fn) {
+  const max = parseInt(this)
+  for (let i = 0; i < max; i++) await fn(i)
+}

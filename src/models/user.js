@@ -7,8 +7,8 @@ const db = new Database()
 const log = createLogger('models/user', logAllowed.queries)
 
 const createQuery = db.prepare(
-  'INSERT INTO user (username, password, name) ' +
-  'VALUES (:username, :password, :name);'
+  'INSERT INTO user (username, password, name, birthdate, photo) ' +
+  'VALUES (:username, :password, :name, :birthdate, photo);'
 )
 
 const updateQuery = db.prepare(
@@ -42,14 +42,21 @@ export const name = 'user'
  * Creates an user.
  * @param {string} username The username.
  * @param {string} password The password.
+ * @param {string} name The user name.
+ * @param {string} birthdate The user birthdate.
+ * @param {string} photo The user photo.
  * @returns {Promise<string>} The user id if the user was created, or null,
  *  otherwise.
  */
-export async function create(username, password, name) {
+export async function create(username, password, name, birthdate, photo) {
   log('create', ...arguments)
 
+  const params = {
+    username, password, name, birthdate, photo
+  }
+
   try {
-    const result = await db.query(createQuery({ username, password, name }))
+    const result = await db.query(createQuery(params))
     return result.info.insertId || null
   }
   catch (error) {
@@ -107,6 +114,6 @@ export async function findById(selfId, userId) {
  * @returns {Promise<Array<object>>} The users data.
  */
 export async function findAll(selfId) {
-  log('', selfId)
+  log('findAll', selfId)
   return db.query(findAllQuery({ selfId }))
 }

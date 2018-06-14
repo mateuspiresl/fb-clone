@@ -1,6 +1,7 @@
 import Database from '../database'
 import { logAllowed } from '../config'
 import { createLogger } from '../utils'
+import * as GroupMembership from './group-membership'
 
 const db = new Database()
 const log = createLogger('models/group', logAllowed.queries)
@@ -33,13 +34,14 @@ export const name = 'group'
 export async function create(creatorId, name, description, picture) {
   log('create', ...arguments)
 
+  const params = {
+      creatorId,
+      name,
+      description,
+      picture
+  }
+
   try {
-    const params = {
-        creatorId,
-        name,
-        description,
-        picture
-    }
     const result = await db.query(createQuery(params))
     return result.info.insertId || null
   }
@@ -86,7 +88,6 @@ export async function remove(creatorId, groupId) {
     group_id: groupId
   }
 
-  console.log(params)
   const result = await db.query(removeQuery(params))
   return result.info.affectedRows == '1'
 }

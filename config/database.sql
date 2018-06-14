@@ -60,7 +60,6 @@ CREATE TABLE IF NOT EXISTS `comment` (
   CONSTRAINT `post_commented` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE
 );
 
--- DO NOT INCLUDE THIS TRIGGER !!!
 -- The hard approach for deleted user: allows a comment to exist even if the user is deleted.
 -- CREATE TRIGGER `unauthored_comment`
 -- BEFORE INSERT ON `comment` FOR EACH ROW
@@ -80,7 +79,6 @@ CREATE TABLE IF NOT EXISTS `comment_answer` (
   CONSTRAINT `comment_commented` FOREIGN KEY (`comment_id`) REFERENCES `comment`(`id`) ON DELETE CASCADE
 );
 
--- DO NOT INCLUDE THIS TRIGGER !!!
 -- The hard approach for deleted user: allows a comment answer to exist even if the user is deleted.
 -- CREATE TRIGGER `unauthored_comment_answer`
 -- BEFORE INSERT ON `comment_answer` FOR EACH ROW
@@ -112,6 +110,11 @@ CREATE TABLE IF NOT EXISTS `group_post` (
   CONSTRAINT `belonging` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
 
+-- The hard approach for deleted post group: also delete the post.
+-- CREATE TRIGGER `group_post_deletion`
+-- AFTER DELETE ON `group_post` FOR EACH ROW
+--   DELETE FROM `post` WHERE `id`=OLD.`post_id`;
+
 CREATE TABLE IF NOT EXISTS `group_membership` (
   `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
@@ -120,6 +123,12 @@ CREATE TABLE IF NOT EXISTS `group_membership` (
   CONSTRAINT `membership` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
   CONSTRAINT `membership_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
+
+-- The hard approach for create a group: also create the creator's membership.
+CREATE TRIGGER `group_creation`
+AFTER INSERT ON `group` FOR EACH ROW
+  INSERT INTO `group_membership` (`user_id`, `group_id`, `is_admin`)
+  VALUES (NEW.`creator_id`, NEW.`id`, '1');
 
 CREATE TABLE IF NOT EXISTS `group_blocking` (
   `user_id` int(11) NOT NULL,

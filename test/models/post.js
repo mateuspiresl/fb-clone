@@ -2,6 +2,8 @@ import chai from 'chai'
 import Database from '../../src/database'
 import * as User from '../../src/models/user'
 import * as Post from '../../src/models/post'
+import * as Group from '../../src/models/group'
+import * as GroupPost from '../../src/models/group-post'
 import { logAllowed } from '../../src/config'
 import '../index'
 
@@ -58,8 +60,15 @@ describe('Models | Post', () => {
     selfId = await insertUser('Z')
   })
 
-  afterEach(() => db.clear(Post.name))
-  after(() => db.clear(User.name))
+  afterEach(async () => {
+    await db.clear(Post.name)
+    await db.clear(GroupPost.name)
+    await db.clear(Group.name)
+  })
+  
+  after(async () => {
+    await db.clear(User.name)
+  })
 
   it('create post', async () => {
     const content = 'c'
@@ -148,6 +157,35 @@ describe('Models | Post', () => {
       postIds[authorId] = await contents.mapAsync((content, index) =>
         Post.create(authorId, { content, isPublic: index === 0 })
       )
+    )
+
+    await ids.mapAsync(async (authorId, authorIndex) => {
+      const posts = await Post.findByAuthor(selfId, authorId)
+      should.exist(posts)
+      posts.should.be.an('array').that.has.length(1)
+
+      const post = posts[0]
+      validate(post, {
+        content: contents[0],
+        picture: null,
+        name: names[authorIndex]
+      })
+    })
+  })
+
+  it('find by author results should not include group posts', async () => {
+    const contents = ['a', 'b', 'c']
+    const postIds = {}
+
+    const groupId = await Group.create(selfId, 'gn', 'gd', 'gp')
+    await contents.mapAsync(content =>
+      GroupPost.create(selfId, groupId, { content })
+    )
+
+    await ids.mapAsync(async authorId =>
+      postIds[authorId] = await contents.mapAsync(async (content, index) => {
+        await Post.create(authorId, { content, isPublic: index === 0 })
+      })
     )
 
     await ids.mapAsync(async (authorId, authorIndex) => {

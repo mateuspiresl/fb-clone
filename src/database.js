@@ -18,9 +18,7 @@ export default class Database {
     this.connection = connectionInstance
   }
 
-  query(sql) {
-    if (logAllowed.sql) console.log('SQL:', sql)
-    
+  _query(sql) {
     return new Promise((resolve, reject) => {
       this.connection.query(sql, (error, result) => {
         if (error) reject(error)
@@ -29,12 +27,19 @@ export default class Database {
     })
   }
 
+  query(sql) {
+    if (logAllowed.sql) console.log('SQL:', sql)
+    return this._query(sql)
+  }
+
   prepare(sql) {
     return this.connection.prepare(sql)
   }
 
   clear(table) {
-    return this.query('DELETE FROM `' + table + '`;')
+    const sql = 'DELETE FROM `' + table + '`;'
+    if (logAllowed.clearSql) console.log('CLEAR_SQL:', sql)
+    return this._query(sql)
   }
 
   close() {

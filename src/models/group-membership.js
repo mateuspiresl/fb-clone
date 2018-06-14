@@ -29,13 +29,14 @@ export const name = 'group_membership'
  * @param {string} acceptantId The id of the membership request.
  * @param {string} requesterId The id of the membership request.
  * @param {string} groupId The id of the requested group.
+ * @param {string} isAdmin The user should have admin privilegies.
  * @returns {Promise<boolean>} True if the request was successfuly created, false otherwise.
  */
-export async function create(acceptantId, requesterId, groupId) {
+export async function create(acceptantId, requesterId, groupId, isAdmin=false) {
   log('create group membership request', ...arguments)
 
   try {
-    const params = { acceptantId, requesterId, groupId }
+    const params = { acceptantId, requesterId, groupId, isAdmin }
     const result = await db.query(createQuery(params))
     return result.info.insertId
   }

@@ -21,8 +21,10 @@ const findByIdQuery = db.prepare(
 const findByAuthorQuery = db.prepare(
   'SELECT p.*, u.name as user_name, u.photo as user_photo ' + 
   'FROM post as p ' +
+  'LEFT JOIN group_post as gp ON gp.post_id=p.id ' +
   'INNER JOIN user as u ON u.id=p.author_id ' +
-  'WHERE p.author_id=:authorId AND (p.is_public=1 OR p.author_id=:selfId);'
+  'WHERE gp.post_id IS NULL AND p.author_id=:authorId ' +
+    'AND (p.is_public=1 OR p.author_id=:selfId);'
 )
 
 const removeQuery = db.prepare(
