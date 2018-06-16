@@ -1,4 +1,4 @@
-# FB-Clone
+# Social Network API
 
 ## Install Docker
 
