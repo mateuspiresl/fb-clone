@@ -11,7 +11,8 @@ const createQuery = db.prepare(
   'INSERT INTO group_post (post_id, group_id) ' +
   'SELECT :postId, :groupId FROM dual ' +
   'WHERE EXISTS (' +
-    'SELECT * FROM group_membership WHERE user_id=:selfId' +
+    'SELECT * FROM group_membership ' +
+    'WHERE group_id=:groupId AND user_id=:selfId' +
   ');'
 )
 
