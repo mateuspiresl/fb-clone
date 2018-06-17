@@ -69,8 +69,7 @@ export async function sectionScreen() {
     2. Listar meus amigos
     3. Listar todos os usuários
     4. Ver perfil de um usuário
-    5. Listar solicitações de amizade
-    6. Aceitar solicitação de amizade`
+    5. Listar solicitações de amizade`
 
   const options = {
     1: selfFeedScreen,
@@ -92,12 +91,6 @@ export async function sectionScreen() {
       const users = await FriendshipRequest.findAll(selfId)
       console.log('Users:', users.map(_=>_))
       sectionScreen()
-    },
-    6: async () => {
-      logResult(await acceptFriendshipRequest(await ask('id')),
-        'Amizade aceita.',
-        'Erro ao aceitar amizade.')
-      sectionScreen()
     }
   }
 
@@ -109,23 +102,29 @@ export async function profileScreen(userId) {
 
   const { selfId } = global
   const user = await User.findById(selfId, userId)
-  console.log('Profile:', user)
 
-  let resturnValues
-
-  if (user.is_friend) {
-    resturnValues = profileScreenAsFriend(user)
-  } else if (user.is_blocked) {
-    resturnValues = profileScreenAsBlocker(user)
-  } else if (user.is_friendship_requester) {
-    resturnValues = profileScreenAsFriendshipRequester(user)
-  } else if (user.is_friendship_requested) {
-    resturnValues = profileScreenAsFriendshipRequested(user)
+  if (user) {
+    console.log('Profile:', user)
+  
+    let resturnValues
+  
+    if (user.is_friend) {
+      resturnValues = profileScreenAsFriend(user)
+    } else if (user.is_blocked) {
+      resturnValues = profileScreenAsBlocker(user)
+    } else if (user.is_friendship_requester) {
+      resturnValues = profileScreenAsFriendshipRequested(user)
+    } else if (user.has_friendship_requested) {
+      resturnValues = profileScreenAsFriendshipRequester(user)
+    } else {
+      resturnValues = profileScreenAsCommon(user)
+    }
+  
+    handleInput(...resturnValues, sectionScreen)
   } else {
-    resturnValues = profileScreenAsCommon(user)
+    console.log(`Usuário ${userId} não encontrado.`)
+    sectionScreen()
   }
-
-  handleInput(...resturnValues, sectionScreen)
 }
 
 async function acceptFriendshipRequest(userId) {
@@ -159,10 +158,10 @@ function profileScreenAsCommon(user) {
       profileScreen(user.id)
     },
     3: async () => {
-      const unblocked = await UserBlocking.remove(selfId, user.id)
+      const blocked = await UserBlocking.create(global.selfId, user.id)
 
-      logResult(unblocked, `Você desbloqueou ${user.name}.`,
-        `Erro ao processar o desbloqueio de ${user.name}.`)
+      logResult(blocked, `Você bloqueou ${user.name}.`,
+        `Erro ao processar o bloqueio de ${user.name}.`)
       profileScreen(user.id)
     },
     4: sectionScreen
@@ -209,10 +208,10 @@ function profileScreenAsBlocker(user) {
 
   const options = {
     1: async () => {
-      const blocked = await UserBlocking.create(global.selfId, user.id)
+      const unblocked = await UserBlocking.remove(global.selfId, user.id)
 
-      logResult(blocked, `Você bloqueou ${user.name}.`,
-        `Erro ao processar o bloqueio de ${user.name}.`)
+      logResult(unblocked, `Você desbloqueou ${user.name}.`,
+        `Erro ao processar o desbloqueio de ${user.name}.`)
       profileScreen(user.id)
     },
     2: sectionScreen

@@ -34,11 +34,11 @@ const findByIdQuery = db.prepare(
     'blocker_id=:selfId AND blocked_id=:userId ' +
   ') THEN 1 ELSE 0 END AS is_blocked, ' +
   'CASE WHEN EXISTS (SELECT * FROM user_friendship_request WHERE ' +
-    'requester_id=:selfId AND requested_id=:userId ' +
+    'requester_id=:userId AND requested_id=:selfId ' +
   ') THEN 1 ELSE 0 END AS is_friendship_requester, ' +
   'CASE WHEN EXISTS (SELECT * FROM user_friendship_request WHERE ' +
-    'requester_id=:userId AND requested_id=:selfId ' +
-  ') THEN 1 ELSE 0 END AS is_friendship_requested ' +
+    'requester_id=:selfId AND requested_id=:userId ' +
+  ') THEN 1 ELSE 0 END AS has_friendship_requested ' +
   'FROM user AS u ' +
   'LEFT JOIN user_blocking AS ub ON u.id=ub.blocker_id ' +
   'WHERE u.id=:userId AND (ub.blocker_id IS NULL OR ub.blocked_id!=:selfId);'
@@ -122,9 +122,9 @@ export async function findById(selfId, userId) {
 
   if (user) {
     user.is_friend = user.is_friend === '1'
-    user.is_blocker = user.is_blocker === '1'
+    user.is_blocked = user.is_blocked === '1'
     user.is_friendship_requester = user.is_friendship_requester === '1'
-    user.is_friendship_requested = user.is_friendship_requested === '1'
+    user.has_friendship_requested = user.has_friendship_requested === '1'
   }
 
   return user
