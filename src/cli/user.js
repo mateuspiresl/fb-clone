@@ -1,40 +1,57 @@
 import { ask, handle as handleInput } from './input'
 import * as groupRoute from './group'
+import * as User from '../models/user'
+import * as Post from '../models/post'
+import * as Friendship from '../models/friendship'
+import * as FriendshipRequest from '../models/friendship-request'
+import * as UserBlocking from '../models/user-blocking'
 
+
+function log(tag, ...args) {
+  console.log(`user.${tag}`, ...args)
+}
 
 function logWhere(method) {
-  console.log('\n---- user.' + method)
+  console.log(`\n----(${global.selfId}) user.${method}`)
+}
+
+function logResult(result, success, fail) {
+  if (result) {
+    console.log(success)
+  } else {
+    console.error(fail)
+  }
 }
 
 export async function selfFeedScreen(next) {
   logWhere('selfFeedScreen')
 
+  const user = await User.findById(global.selfId, global.selfId)
   const text = `
-    Você está logado. O que deseja fazer?
-    1. Ver feed
+    Olá, ${user.name}.
+    1. Ver meu feed
     2. Criar um post
     3. Navegar para sessão de Usuarios
     4. Navegar para sessão de Grupos
     5. Deslogar`
 
   const options = {
-    1: () => {
-      const postings = [
-        {'amigo1': 'Que dia legal.'},
-        {'amigo2': 'Que dia ruim.'},
-        {'amigo1': 'Que dia indiferente.'},
-      ]
-      
-      // TODO: List real postings [IM]
-      console.log('\n\n', postings, '\n\n')
-      
+    1: async () => {
+      const posts = await Post.findByAuthor(global.selfId, global.selfId)
+      console.log('Posts:', posts.map(_=>_))
       selfFeedScreen()
     },
-    2: createFeedPost,
+    2: async () => {
+      const fields = await ask(['content', 'photo'])
+      const postId = await Post.create(global.selfId, fields)
+      console.log(`Post ${postId} criado.`)
+      selfFeedScreen()
+    },
     3: sectionScreen,
     4: () => groupRoute.sectionScreen(selfFeedScreen),
     5: () => {
-      console.log('Você foi deslogado.')
+      console.log('Usuário deslogado.')
+      global.selfId = null
       next()
     }
   }
@@ -42,115 +59,44 @@ export async function selfFeedScreen(next) {
   handleInput(text, options, selfFeedScreen)
 }
 
-export async function createFeedPost() {
-  logWhere('createFeedPost')
-  
-  const fields = await ask(['content', 'photo'])
-  console.log('group.createFeedPost', fields)
-
-  selfFeedScreen()
-}
-
 export async function sectionScreen() {
   logWhere('sectionScreen')
+  const { selfId } = global
 
   const text = `
-    Você está na sessão de Usuários. O que deseja fazer?
+    Você está na sessão de usuários. O que deseja fazer?
     1. Voltar para meu feed
-    2. Listas usuários que são meus amigos
+    2. Listar meus amigos
     3. Listar todos os usuários
-    4. Navegar para o perfil de um usuário`
+    4. Ver perfil de um usuário
+    5. Listar solicitações de amizade
+    6. Aceitar solicitação de amizade`
 
   const options = {
-    1: () => {
-      console.log('Voltando para meu feed.')
-      selfFeedScreen()
-    },
-    2: () => {
-      // TODO: fetch real data [IM]
-      console.log(['user01'])
-      sectionScreen()
-    },
-    3: () => {
-      // TODO: fetch real data [IM]
-      console.log(['user01', 'user02'])
-      sectionScreen()
-    },
-    4: () => {
-      // perform all checks before navigating (user is friend? Is blocked? Exists?) [IM]
-
-      // selfProfileScreen() // working [IM]
-      friendProfileScreen() // working [IM]
-      // blockedProfileScreen() // working [IM]
-    }
-  }
-
-  handleInput(text, options, sectionScreen)
-}
-
-export async function selfProfileScreen() {
-  logWhere('selfProfileScreen')
-
-  const text = `
-    Você está no perfil de usuário. O que deseja fazer?
-    1. Solicitar amizade
-    2. Bloquear usuário
-    3. Voltar para a sessão de Usuários`
-
-  const options = {
-    1: () => {
-      console.log('Amizade solicitada, voltando para a sessão de Usuários.')
-      sectionScreen()
-    },
-    2: () => {
-      console.log('Usuário bloqueado, voltando para a sessão de Usuários.')
-      sectionScreen()
-    },
-    3: () => {
-      console.log('Voltando para a sessão de Usuários.')
-      sectionScreen()
-    }
-  }
-
-  handleInput(text, options, sectionScreen)
-}
-
-export async function friendProfileScreen() {
-  logWhere('friendProfileScreen')
-  
-  const text = `
-    Você está no perfil de um Amigo. O que deseja fazer?
-    1. Ver o feed do meu amigo
-    2. Criar um post no feed do meu amigo
-    3. Remover amizade
-    4. Bloquear
-    5. Voltar para a sessão de Usuários`
-
-  const options = {
-    1: () => {
-      console.log('Vendo feed do amigo.')
-      // TODO: fetch real data [IM]
-      console.log(['friendPosting01', 'friendPosting02'])
-      friendProfileScreen()
-    },
+    1: selfFeedScreen,
     2: async () => {
-      // TODO: call posting creation method passing user as param [IM]
-      // TODO: extract this to a method [IM]
-
-      const fields = await ask(['postContext', 'postPicture'])
-      console.log('Post criado no mural do seu amigo.', fields)
-      friendProfileScreen()
-    },
-    3: () => {
-      console.log('Amizade removida, voltando para a o perfil deste mesmo usuário.')
-      selfProfileScreen() // passing same ID, but not friends anymore [IM]
-    },
-    4: () => {
-      console.log('Amizade desfeita e usuário bloqueado. Voltando para a sessão de usuários')
+      const friends = await Friendship.findAll(selfId)
+      console.log('Friends:', friends.map(_=>_))
       sectionScreen()
     },
-    5: () => {
-      console.log('Voltando para a sessão de Usuários.')
+    3: async () => {
+      const users = await User.findAll(selfId)
+      console.log('Users:', users.map(_=>_))
+      sectionScreen()
+    },
+    4: async () => {
+      const userId = await ask('id')
+      profileScreen(userId)
+    },
+    5: async () => {
+      const users = await FriendshipRequest.findAll(selfId)
+      console.log('Users:', users.map(_=>_))
+      sectionScreen()
+    },
+    6: async () => {
+      logResult(await acceptFriendshipRequest(await ask('id')),
+        'Amizade aceita.',
+        'Erro ao aceitar amizade.')
       sectionScreen()
     }
   }
@@ -158,24 +104,197 @@ export async function friendProfileScreen() {
   handleInput(text, options, sectionScreen)
 }
 
-export async function blockedProfileScreen() {
-  logWhere('blockedProfileScreen')
+export async function profileScreen(userId) {
+  logWhere('profileScreen')
 
-  const text = `
-    Você está no perfil de usuário bloqueado. O que deseja fazer?
-    1. Desbloquear este usuário
-    2. Voltar para a sessão de Usuários`
+  const { selfId } = global
+  const user = await User.findById(selfId, userId)
+  console.log('Profile:', user)
 
-  const options = {
-    1: () => {
-      console.log('O usuário foi desbloqueado.')
-      selfProfileScreen()
-    },
-    2: () => {
-      console.log('Voltando para a sessão de Usuários.')
-      sectionScreen()
-    }
+  let resturnValues
+
+  if (user.is_friend) {
+    resturnValues = profileScreenAsFriend(user)
+  } else if (user.is_blocked) {
+    resturnValues = profileScreenAsBlocker(user)
+  } else if (user.is_friendship_requester) {
+    resturnValues = profileScreenAsFriendshipRequester(user)
+  } else if (user.is_friendship_requested) {
+    resturnValues = profileScreenAsFriendshipRequested(user)
+  } else {
+    resturnValues = profileScreenAsCommon(user)
   }
 
-  handleInput(text, options, sectionScreen)
+  handleInput(...resturnValues, sectionScreen)
+}
+
+async function acceptFriendshipRequest(userId) {
+  const removed = await FriendshipRequest.remove(userId, global.selfId)
+  return removed && await Friendship.create(global.selfId, userId)
+}
+
+async function seeFeed(user) {
+  const posts = await Post.findByAuthor(global.selfId, user.id)
+  console.log('Feed:', posts)
+  profileScreen(user.id)
+}
+
+function profileScreenAsCommon(user) {
+  const { selfId } = global
+
+  const text = `
+    Você está no perfil de ${user.name}.
+    1. Ver o feed
+    2. Solicitar amizade
+    3. Bloquear
+    4. Voltar para a sessão de usuários`
+
+  const options = {
+    1: seeFeed,
+    2: async () => {
+      const requested = await FriendshipRequest.create(selfId, user.id)
+
+      logResult(requested, `Você solicitou a amizade de ${user.name}.`,
+        `Erro ao processar a solicitação de amizade para ${user.name}.`)
+      profileScreen(user.id)
+    },
+    3: async () => {
+      const unblocked = await UserBlocking.remove(selfId, user.id)
+
+      logResult(unblocked, `Você desbloqueou ${user.name}.`,
+        `Erro ao processar o desbloqueio de ${user.name}.`)
+      profileScreen(user.id)
+    },
+    4: sectionScreen
+  }
+  
+  return [text, options]
+}
+
+function profileScreenAsFriend(user) {
+  const { selfId } = global
+
+  const text = `
+    Você está no perfil de ${user.name} (amigo).
+    1. Ver o feed
+    2. Criar post
+    3. Remover amizade
+    4. Voltar para a sessão de usuários`
+
+  const options = {
+    1: seeFeed,
+    2: async () => {
+      const fields = await ask(['postContext', 'postPicture'])
+      const postId = await Post.create(selfId, fields)
+
+      console.log(`Post ${postId} criado no mural de ${user.name}.`)
+      profileScreen(user.id)
+    },
+    3: async () => {
+      await Friendship.remove(selfId, user.id)
+      console.log(`A sua amizade com ${user.name} foi removida.`)
+      profileScreen(user.id)
+    },
+    4: sectionScreen
+  }
+
+  return [text, options]
+}
+
+function profileScreenAsBlocker(user) {
+  const text = `
+    Você está no perfil de ${user.name} (bloqueado).
+    1. Desbloquear
+    4. Voltar para a sessão de usuários`
+
+  const options = {
+    1: async () => {
+      const blocked = await UserBlocking.create(global.selfId, user.id)
+
+      logResult(blocked, `Você bloqueou ${user.name}.`,
+        `Erro ao processar o bloqueio de ${user.name}.`)
+      profileScreen(user.id)
+    },
+    2: sectionScreen
+  }
+
+  return [text, options]
+}
+
+function profileScreenAsFriendshipRequester(user) {
+  const { selfId } = global
+
+  const text = `
+    Você está no perfil de ${user.name}.
+    1. Ver o feed
+    2. Cancelar solicitação de amizade
+    3. Bloquear
+    4. Voltar para a sessão de usuários`
+
+  const options = {
+    1: seeFeed,
+    2: async () => {
+      const requested = await FriendshipRequest.remove(selfId, user.id)
+
+      logResult(requested, `Você desfez a solicitção de amizade para ${user.name}.`,
+        `Erro ao tentar desfazer a solicitação de amizade para ${user.name}.`)
+      profileScreen(user.id)
+    },
+    3: async () => {
+      const undoneRequest = await FriendshipRequest.remove(selfId, user.id)
+      
+      if (undoneRequest) {
+        const blocked = await UserBlocking.create(selfId, user.id)
+  
+        logResult(blocked, `Você desbloqueou ${user.name}.`,
+          `Erro ao processar o bloqueio de ${user.name}.`)
+      } else {
+        console.error(`Erro ao processar o bloqueio de ${user.name}.`)
+      }
+
+      profileScreen(user.id)
+    },
+    4: sectionScreen
+  }
+  
+  return [text, options]
+}
+
+function profileScreenAsFriendshipRequested(user) {
+  const { selfId } = global
+
+  const text = `
+    Você está no perfil de ${user.name}.
+    1. Ver o feed
+    2. Aceitar solicitação de amizade
+    3. Bloquear
+    4. Voltar para a sessão de usuários`
+
+  const options = {
+    1: seeFeed,
+    2: async () => {
+      const accepted = await acceptFriendshipRequest(user.id)
+
+      logResult(accepted, `Você aceitou a solicitção de amizade de ${user.name}.`,
+        `Erro ao tentar aceitar a solicitação de amizade de ${user.name}.`)
+      profileScreen(user.id)
+    },
+    3: async () => {
+      const undoneRequest = await FriendshipRequest.remove(user.id, selfId)
+      
+      if (undoneRequest) {
+        const blocked = await UserBlocking.create(selfId, user.id)
+  
+        logResult(blocked, `Você desbloqueou ${user.name}.`,
+          `Erro ao processar o bloqueio de ${user.name}.`)
+      } else {
+        console.error(`Erro ao processar o bloqueio de ${user.name}.`)
+      }
+
+      profileScreen(user.id)
+    },
+    4: sectionScreen
+  }
+
+  return [text, options]
 }

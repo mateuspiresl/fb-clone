@@ -52,11 +52,21 @@ async function signIn() {
   logWhere('signIn')
 
   const fields = await ask(['username', 'password'])
-  console.log('signIn', fields)
+  const userId = await User.matchCredencials(fields.username, fields.password)
 
-  global.selfId = await User.matchCredencials(fields.username, fields.password)
-  userRoute.selfFeedScreen()
+  if (userId) {
+    console.log(`Usuário ${userId} autenticado com sucesso.`)
+    global.selfId = userId
+    userRoute.selfFeedScreen(authenticationScreen)
+  } else {
+    console.log('Credenciais inválidas.')
+    authenticationScreen()
+  }
 }
 
 
 authenticationScreen()
+
+process.on('unhandledRejection', function (error) {
+  console.error('UNCAUGHT', error)
+})

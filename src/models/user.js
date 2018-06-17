@@ -8,7 +8,7 @@ const log = createLogger('models/user', logAllowed.queries)
 
 const createQuery = db.prepare(
   'INSERT INTO user (username, password, name, birthdate, photo) ' +
-  'VALUES (:username, :password, :name, :birthdate, photo);'
+  'VALUES (:username, :password, :name, :birthdate, :photo);'
 )
 
 const updateQuery = db.prepare(
@@ -25,8 +25,22 @@ const matchCredencialsQuery = db.prepare(
 )
 
 const findByIdQuery = db.prepare(
-  'SELECT u.id, u.username, u.name FROM user as u ' +
-  'LEFT JOIN user_blocking as ub ON u.id=ub.blocker_id ' +
+  'SELECT u.id, u.username, u.name, ' +
+  'CASE WHEN EXISTS (SELECT * FROM user_friendship WHERE ' +
+    'user_a_id=:selfId AND user_b_id=:userId OR ' +
+    'user_a_id=:userId AND user_b_id=:selfId ' +
+  ') THEN 1 ELSE 0 END AS is_friend, ' +
+  'CASE WHEN EXISTS (SELECT * FROM user_blocking WHERE ' +
+    'blocker_id=:selfId AND blocked_id=:userId ' +
+  ') THEN 1 ELSE 0 END AS is_blocked, ' +
+  'CASE WHEN EXISTS (SELECT * FROM user_friendship_request WHERE ' +
+    'requester_id=:selfId AND requested_id=:userId ' +
+  ') THEN 1 ELSE 0 END AS is_friendship_requester, ' +
+  'CASE WHEN EXISTS (SELECT * FROM user_friendship_request WHERE ' +
+    'requester_id=:userId AND requested_id=:selfId ' +
+  ') THEN 1 ELSE 0 END AS is_friendship_requested ' +
+  'FROM user AS u ' +
+  'LEFT JOIN user_blocking AS ub ON u.id=ub.blocker_id ' +
   'WHERE u.id=:userId AND (ub.blocker_id IS NULL OR ub.blocked_id!=:selfId);'
 )
 
@@ -75,7 +89,7 @@ export async function create(username, password, name, birthdate, photo) {
 export async function update(selfId, data) {
   log('update', selfId, JSON.stringify(data))
 
-  const result = await db.query(createQuery({ selfId, ...data }))
+  const result = await db.query(updateQuery({ selfId, ...data }))
   return result.info.insertId || null
 }
 
@@ -87,7 +101,7 @@ export async function update(selfId, data) {
  *  otherwise.
  */
 export async function matchCredencials(username, password) {
-  log('update', ...arguments)
+  log('matchCredencials', ...arguments)
 
   const result = await db.query(matchCredencialsQuery({ username, password }))
   return result.length > 0 && result[0].id || null
@@ -104,7 +118,16 @@ export async function findById(selfId, userId) {
   log('findById', selfId, userId)
 
   const result = await db.query(findByIdQuery({ selfId, userId }))
-  return result.length > 0 && result[0] || null
+  const user = result.length > 0 && result[0] || null
+
+  if (user) {
+    user.is_friend = user.is_friend === '1'
+    user.is_blocker = user.is_blocker === '1'
+    user.is_friendship_requester = user.is_friendship_requester === '1'
+    user.is_friendship_requested = user.is_friendship_requested === '1'
+  }
+
+  return user
 }
 
 /**
