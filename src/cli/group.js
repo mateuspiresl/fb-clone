@@ -1,5 +1,8 @@
 import { ask, handle as handleInput } from './input'
-
+import * as Group from '../models/group'
+import * as GroupMembership from '../models/group-membership'
+import * as GroupRequest from '../models/group-request'
+import * as GroupPost from '../models/group-post'
 
 function logWhere(method) {
   console.log('\n---- group.' + method)
@@ -11,27 +14,25 @@ export async function sectionScreen(next) {
   const text = `
     Você está na sessão de Grupos. O que deseja fazer?
     1. Voltar para meu feed
-    2. Listas grupos que sou membro
-    3. Listar todos os groups
-    4. Navegar para um grupo
-    5. Criar um grupo`
+    2. Listar grupos que sou dono
+    3. Listar grupos que sou membro
+    4. Listar todos os groups
+    5. Navegar para um grupo
+    6. Criar um grupo`
 
   const options = {
-    1: function() {
-      console.log('Voltando para meu feed.')
+    1: next,
+    2: async () => {
+      const groupsThatUserOwns = await Group.findAllByCreator(global.selfId)
+      console.log('Sou dono dos grupos: ', groupsThatUserOwns)
       next()
     },
-    2: function() {
-      // TODO: fetch real data [IM]
-      console.log(['group01'])
-      sectionScreen()
-    },
-    3: function() {
-      // TODO: fetch real data [IM]
-      console.log(['group01', 'group02', 'group03'])
-      sectionScreen()
-    },
-    4: async function() {
+    3: listGroupsThatImMember,
+    4: listAllGroups,
+    5: async () => {
+      
+      const groupId = await ask('id')
+      groupScreen(groupId)
       // When navigating, there is a route to groups that i am member
       // and routes for groups that i am not an actual member.
       // I guess all the logic to check my relation with the group
@@ -41,16 +42,50 @@ export async function sectionScreen(next) {
       // const amIMember: Bool = group.checkMembership(withMe)
       // if amIMember:
       // groupScreen(amIMember)
-      console.log('Navegando para o grupo escolhido.')
+      // console.log('Navegando para o grupo escolhido.')
       
       // notAsMemberScreen()
-      asMemberScreen()
+      // asMemberScreen()
     },
-    5: creationScreen
+    6: creationScreen
   }
 
   handleInput(text, options, sectionScreen)
 }
+
+
+export async function groupScreen(groupId) {
+  logWhere('groupScreen')
+  const group = await Group.findById(groupId)
+  console.log(group)
+  // check membership [IM]
+  const membershipExists = await GroupMembership.checkIfExists(global.selfId, groupId)
+
+  if (membershipExists) {
+    asMemberScreen(groupId)
+  } else {
+    notAsMemberScreen(groupId)
+  }
+}
+
+
+export async function listGroupsThatImMember() {
+  logWhere('listGroupsThatImMember')
+  const allGroups = await GroupMembership.f()
+  console.log('Listando todos os grupos')
+  console.log(allGroups)
+  sectionScreen()
+}
+
+
+export async function listAllGroups() {
+  logWhere('listAllGroups')
+  const allGroups = await Group.findAll()
+  console.log('Listando todos os grupos')
+  console.log(allGroups)
+  sectionScreen()
+}
+
 
 export async function creationScreen() {
   logWhere('creationScreen')
@@ -72,51 +107,75 @@ export async function creationScreen() {
 }
 
 export async function create() {
-  logWhere('create')
-
   const fields = await ask(['name', 'description', 'picture'])
+  await Group.create(global.selfId, fields)
   console.log(`Você criou o grupo ${fields.name}.`, fields)
   sectionScreen()
 }
 
-export async function notAsMemberScreen() {
+export async function notAsMemberScreen(groupId) {
   logWhere('notAsMemberScreen')
 
-  // What if the request was already made? This should to be
-  // checked to decide which path should be followed [IM]
-  const alreadyRequested = Math.random() >= 0.5
+  // Check wether the user has requested to join or not [IM]
+  const userHasPendingMembershipRequest = await GroupRequest.findOne(global.selfId, groupId)
 
-  const membershipNotRequestedYetText = `
-    Você está na tela de um Grupo, porém ainda não é membro. O que deseja fazer?
-    1. Voltar para a sessão de Grupos
-    2. Solicitar participação`
+  const text = userHasPendingMembershipRequest ?
+    `
+      Você está na tela de um Grupo, porém ainda não é membro. O que deseja fazer?
+      1. Voltar para a sessão de Grupos
+      2. Cancelar minha solicitação de participação`
+    : // otherwhise [IM]
+    `
+      Você está na tela de um Grupo, porém ainda não é membro. O que deseja fazer?
+      1. Voltar para a sessão de Grupos
+      2. Solicitar participação`
 
-  const membershipAlreadyRequestedText = `
-    Você está na tela de um Grupo, porém ainda não é membro. O que deseja fazer?
-    1. Voltar para a sessão de Grupos
-    2. Cancelar minha solicitação de participação`
-
-  const text = alreadyRequested ? membershipAlreadyRequestedText : membershipNotRequestedYetText
-
-  const options = {
+  var options = {
     1: function() {
       console.log('Voltando para a sessão de Grupos.')
       sectionScreen()
     },
-    2: function() {
-      const message = alreadyRequested ? 'Sua solicitação foi cancelada com sucesso.' : 'Sua solicitação foi enviada aos administradores.'
-      console.log(message)
-      sectionScreen()
-    }
   }
+  
+  options = userHasPendingMembershipRequest ?
+    {
+      ...options,
+      2: async () => {
+        const requestRemoval = await GroupRequest.remove(global.selfId, groupId)
+        const message = 'Sua solicitação foi cancelada.'
+        
+        // go back to this group screen [IM]
+        console.log(message, requestRemoval)
+        groupScreen(groupId)
+      }
+    }
+    : // otherwhise [IM]
+    {
+      ...options,
+      2: async () => {
+
+        const request = await GroupRequest.create(global.selfId, groupId)
+        const message = 'Sua solicitação foi enviada aos administradores.'
+        
+        // go back to this group screen [IM]
+        console.log(message, request)
+        groupScreen(groupId)
+      }
+    }
 
   handleInput(text, options, creationScreen)
 }
 
-export async function asMemberScreen() {
-  // This method can and should be fragmented into three smaller methods.
-  // one for default member, one for admin member, one for group owner. [IM]
+export async function asMemberScreen(groupId) {
   logWhere('asMemberScreen')
+
+  // TODO: handle all member types:
+  // common members, admins and owners in a feshion that
+  // admins can banish members
+  // owners can delete the group and assign admins.
+  // each role has its child permissions.
+  // ownerPermissions = [adminPermissions = [commonPermissions]] [IM]
+
 
   const text = `
     Você está na tela de um Grupo como um membro simples ativo. O que deseja fazer?
@@ -127,21 +186,24 @@ export async function asMemberScreen() {
     5. Voltar para a sessão de Grupos`
 
   const defaultOptions = {
-    1: function() {
-      // TODO: fetch real data [IM]
-      console.log([
-        {'membro1': 'Que grupo legal.'},
-        {'membro2': 'Que grupo ruim.'},
-        {'membro3': 'Que grupo indiferente.'},
-      ])
-      asMemberScreen()
+    1: async () => {
+      const posts = await GroupPost.findByGroup(groupId)
+      console.log('Posts neste grupo: ', posts)
+      asMemberScreen(groupId)
     },
-    2: function() {
+    2: async () => {
       // TODO: fetch real data [IM]
-      console.log(['member1', 'member2', 'member3'])
-      asMemberScreen()
+      const members = await GroupMembership.list(groupId)
+      console.log('Os membros são ', members)
+      asMemberScreen(groupId)
     },
-    3: createPost,
+    3: async () => {
+      const fields = await ask(['content', 'picture'])
+      const post = await GroupPost.create(global.selfId, groupId, fields)
+
+      console.log('Post realizado: ', post)
+      asMemberScreen(groupId)
+    },
     4: commentPost,
     5: function() {
       console.log('Voltando para a sessão de Grupos.')
@@ -171,14 +233,6 @@ export async function asMemberScreen() {
   // if (hasPermision...)
 
   handleInput(text, defaultOptions, asMemberScreen)
-}
-
-export async function createPost() {
-  logWhere('createPost')
-
-  const fields = await ask(['content', 'image'])
-  console.log('Post criado no grupo TAL.', fields)
-  asMemberScreen()
 }
 
 export async function commentPost() {

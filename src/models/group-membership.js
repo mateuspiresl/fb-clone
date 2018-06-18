@@ -31,6 +31,10 @@ const listQuery = db.prepare(
   'SELECT * FROM group_membership WHERE group_id=:groupId;'
 )
 
+const checkIfExistsQuery = db.prepare(
+  'SELECT * FROM group_membership WHERE user_id=:userId AND group_id=:groupId;'
+)
+
 export const name = 'group_membership'
 
 
@@ -88,6 +92,18 @@ export async function list(groupId) {
   
   try {
     return await db.query(listQuery({ groupId }))
+  }
+  catch (error) {
+    if (error.code === 1062) return false
+    else throw error
+  }
+}
+
+export async function checkIfExists(userId, groupId) {
+  log('checking membership existance', ...arguments)
+  try {
+    const checkingResult = await db.query(checkIfExistsQuery({ userId, groupId }))
+    return checkingResult.length > 0
   }
   catch (error) {
     if (error.code === 1062) return false

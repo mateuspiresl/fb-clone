@@ -34,6 +34,10 @@ const findAllByUserQuery = db.prepare(
   'WHERE g.user_id=:userId;'
 )
 
+const findOneQuery = db.prepare(
+  'SELECT * FROM group_membership_request WHERE user_id=:userId AND group_id=:groupId;'
+)
+
 export const name = 'group_membership_request'
 
 /**
@@ -80,6 +84,18 @@ export function findAllByGroup(groupId) {
   return db.query(findAllByGroupQuery({ groupId }))
 }
 
+
+export async function findOne(userId, groupId) {
+  try {
+    const result = await db.query(findOneQuery({ userId, groupId }))
+    console.log('\n\n', result, '\n\n')
+    return result.length > 0
+  }
+  catch (error) {
+    if (error.code === 1062) return false
+    else throw error
+  }
+}
 
 /**
  * Returns all membership requests created by a user.

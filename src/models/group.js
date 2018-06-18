@@ -23,6 +23,10 @@ const findAllQuery = db.prepare(
   'SELECT * FROM `group`;'
 )
 
+const findByIdQuery = db.prepare(
+  'SELECT * FROM `group` WHERE id=:groupId;'
+)
+
 export const name = 'group'
 
 /**
@@ -31,14 +35,14 @@ export const name = 'group'
  * @returns {Promise<boolean>} True if the group was successfuly created,
  *  false otherwise.
  */
-export async function create(creatorId, name, description, picture) {
+export async function create(creatorId, { name, description, picture }) {
   log('create', ...arguments)
 
   const params = {
-      creatorId,
-      name,
-      description,
-      picture
+    creatorId,
+    name,
+    description,
+    picture
   }
 
   try {
@@ -64,6 +68,12 @@ export async function findAllByCreator(creatorId) {
   return await db.query(findAllByCreatorQuery(params))
 }
 
+// export async function checkOwnership(creatorId, groupId) {
+//   const result = await checkOwnershipQuery(groupId, creatorId)
+
+//   const groups = findAll
+// }
+
 
 /**
  * Returns all the existent groups.
@@ -72,6 +82,16 @@ export async function findAllByCreator(creatorId) {
 export async function findAll() {
   log('findAll', ...arguments)
   return await db.query(findAllQuery())
+}
+
+/**
+ * Returns a single group by its id.
+ * @returns The queried group.
+ */
+export async function findById(groupId) {
+  log('findAll', ...arguments)
+  console.log(groupId, 'aefaefaefaeaef')
+  return await db.query(findByIdQuery({groupId}))
 }
 
 /**

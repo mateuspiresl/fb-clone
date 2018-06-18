@@ -204,7 +204,7 @@ function profileScreenAsBlocker(user) {
   const text = `
     Você está no perfil de ${user.name} (bloqueado).
     1. Desbloquear
-    4. Voltar para a sessão de usuários`
+    2. Voltar para a sessão de usuários`
 
   const options = {
     1: async () => {
