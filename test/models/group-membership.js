@@ -50,12 +50,38 @@ describe('Models | GroupMembership', () => {
     should.exist(membershipCreationResult)
   })
 
-  it('membership removal / deletion', async () => {
-    const membershipCreationResult = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
-    should.exist(membershipCreationResult)
+  it('membership listing', async () => {
+    await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
+    const membershipListingnResult = await GroupMembership.list(groupId)
+    should.exist(membershipListingnResult)
+    membershipListingnResult.should.be.an('array').that.has.length(1)
+  })
 
+  it('membership removal / deletion', async () => {
+    // Create the membership
+    await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
     const membershipDeletionResult = await GroupMembership.remove(groupRequesterId, groupId)
     should.exist(membershipDeletionResult)
+
+    // The listing test should return 0 elements.
+    const membershipListingnResult = await GroupMembership.list(groupId)
+    should.exist(membershipListingnResult)
+    membershipListingnResult.should.be.an('array').that.has.length(0)
+  })
+
+  it('membership admin', async () => {
+    // Create the membership
+    const membershipId = await GroupMembership.create(groupCreatorUserId, groupRequesterId, groupId)
+
+    // set as admin
+    await GroupMembership.setAdminStatus(true)
+    var membershipListingnResult = await GroupMembership.list(groupId)
+    membershipListingnResult[0].is_admin.should.equal('1')
+
+    // revoke admin status
+    await GroupMembership.setAdminStatus(false)
+    membershipListingnResult = await GroupMembership.list(groupId)
+    membershipListingnResult[0].is_admin.should.equal('0')
   })
 
 })
