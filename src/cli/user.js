@@ -1,5 +1,5 @@
 import { ask, handle as handleInput } from './input'
-import * as groupRoute from './group'
+import GroupSection from './group'
 import * as User from '../models/user'
 import * as FeedPost from '../models/feed-post'
 import * as Friendship from '../models/friendship'
@@ -44,7 +44,7 @@ export async function selfFeedScreen(next) {
       selfFeedScreen()
     },
     3: sectionScreen,
-    4: () => groupRoute.sectionScreen(selfFeedScreen),
+    4: () => GroupSection(selfFeedScreen),
     5: () => {
       console.log('Usuário deslogado.')
       global.selfId = null

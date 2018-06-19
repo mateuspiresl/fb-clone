@@ -141,7 +141,8 @@ export async function checkIfExists(userId, groupId) {
 export async function findOneGroupMembership(userId, groupId) {
   log('finding group membership', ...arguments)
   try {
-    return await db.query(findOneGroupMembershipQuery({ userId, groupId }))
+    const result = await db.query(findOneGroupMembershipQuery({ userId, groupId }))
+    return result[0] || null
   }
   catch (error) {
     if (error.code === 1062) return false

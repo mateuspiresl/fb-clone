@@ -1,4 +1,5 @@
 import { ask, handle as handleInput } from './input'
+import * as groupPost from './group.post'
 import * as User from '../models/user'
 import * as Group from '../models/group'
 import * as GroupMembership from '../models/group-membership'
@@ -9,111 +10,92 @@ function logWhere(method) {
   console.log('\n---- group.' + method)
 }
 
-export async function sectionScreen(next) {
+export default async function GroupSection(next) {
   logWhere('sectionScreen')
 
+  const current = () => GroupSection(next)
+
   const text = `
-    Você está na sessão de Grupos. O que deseja fazer?
+    Você está na sessão de Grupos.
     1. Voltar para meu feed
-    2. Listar grupos que sou dono
+    2. Listar grupos que sou administrador
     3. Listar grupos que sou membro
     4. Listar todos os groups
-    5. Navegar para um grupo
+    5. Ir para um grupo
     6. Criar um grupo`
 
   const options = {
     1: next,
     2: async () => {
-      const groupsThatUserOwns = await Group.findAllByCreator(global.selfId)
-      if (groupsThatUserOwns.length === 0) {
+      const groups = await Group.findAllByCreator(global.selfId)
+      
+      if (groups.length === 0) {
         console.log('Atualmente você não gerencia nenhum grupo.')
-        sectionScreen()
-        return
+      } else {
+        console.log('Grupos:', groups)
       }
-      console.log('Você gerencia os grupos: ', groupsThatUserOwns)
-      sectionScreen()
+
+      current()
     },
-    3: listGroupsThatImMember,
-    4: listAllGroups,
-    5: async () => {
-      const groupId = await ask('id')
-      groupScreen(groupId)
-    },
-    6: creationScreen
+    3: () => listGroupsThatImMember(current),
+    4: () => listAllGroups(current),
+    5: async () => groupScreen(await ask('id'), current),
+    6: async () => {
+      const fields = await ask(['name', 'description', 'picture'])
+      const groupId = await Group.create(global.selfId, fields)
+
+      await GroupMembership.create(global.selfId, global.selfId, groupId, true)
+      
+      console.log(`Você criou o grupo ${fields.name}.`)
+      current()
+    }
   }
 
-  handleInput(text, options, sectionScreen)
+  handleInput(text, options, () => GroupSection(next))
 }
 
-
-export async function groupScreen(groupId) {
+async function groupScreen(groupId, next) {
   logWhere('groupScreen')
   
   const group = await Group.findById(groupId)
 
   if (!group) {
     console.log('Grupo inexistente.')
-    sectionScreen()
+    next()
   } else {
     console.log('Grupo:', group)
 
-    const isMember = await GroupMembership.checkIfExists(global.selfId, groupId)
+    const membership = await GroupMembership.findOneGroupMembership(global.selfId, groupId)
   
-    if (isMember) {
-      asMemberScreen(group)
+    if (membership) {
+      if (membership.is_admin === '1') {
+        asAdminScreen(group, next)
+      } else {
+        asMemberScreen(group, next)
+      }
     } else {
-      notAsMemberScreen(group)
+      asNotMemberScreen(group, next)
     }
   }
 }
 
-
-export async function listGroupsThatImMember() {
+async function listGroupsThatImMember(next) {
   logWhere('listGroupsThatImMember')
   const allGroups = await GroupMembership.listUserMemberships(global.selfId)
   console.log('Listando todos os grupos que sou membro ', allGroups)
-  sectionScreen()
+  next()
 }
 
-
-export async function listAllGroups() {
+async function listAllGroups(next) {
   logWhere('listAllGroups')
   const allGroups = await Group.findAll()
   console.log('Listando todos os grupos')
   console.log(allGroups)
-  sectionScreen()
+  next()
 }
 
-
-export async function creationScreen() {
-  logWhere('creationScreen')
-
-  const text = `
-    Você está na tela de Criação de Grupo. O que deseja fazer?
-    1. Cancelar a criação do grupo e voltar
-    2. Criar um grupo`
-
-  const options = {
-    1: function() {
-      console.log('Voltando para a sessão de Grupos.')
-      sectionScreen()
-    },
-    2: create
-  }
-
-  handleInput(text, options, creationScreen)
-}
-
-export async function create() {
-  const fields = await ask(['name', 'description', 'picture'])
-  const createdGroupId = await Group.create(global.selfId, fields)
-  await GroupMembership.create(global.selfId, global.selfId, createdGroupId, true)
-  console.log(`Você criou o grupo ${fields.name}.`, fields)
-  sectionScreen()
-}
-
-export async function notAsMemberScreen(group) {
-  logWhere('notAsMemberScreen')
+async function asNotMemberScreen(group, next) {
+  logWhere('asNotMemberScreen')
 
   // Check wether the user has requested to join or not [IM]
   const hasPendingRequest = await GroupRequest.exists(global.selfId, group.id)
@@ -130,7 +112,7 @@ export async function notAsMemberScreen(group) {
   const options = {
     1: () => {
       console.log('Voltando para a sessão de Grupos.')
-      sectionScreen()
+      next()
     },
     2: async () => {
       if (hasPendingRequest) {
@@ -147,170 +129,144 @@ export async function notAsMemberScreen(group) {
         }
       }
 
-      notAsMemberScreen(group)
+      asNotMemberScreen(group, next)
     }
   }
 
-  handleInput(text, options, creationScreen)
+  handleInput(text, options, () => asNotMemberScreen(group, next))
 }
 
-export async function asMemberScreen(group) {
+async function asMemberScreen(group, next) {
   logWhere('asMemberScreen')
 
-  // TODO: handle all member types:
-  // common members, admins and owners in a feshion that
-  // admins can banish members
-  // owners can delete the group and assign admins.
-  // each role has its child permissions.
-  // ownerPermissions = [adminPermissions = [commonPermissions]] [IM]
-
-
-  const membership = await GroupMembership.findOneGroupMembership(global.selfId, group.id)
-  const isAdmin = membership[0].is_admin == 1
-  console.log(`Você está no grupo ${group.name}${isAdmin ? ' (admin)' : ''}.`)
-
-  const text = isAdmin ? `
-      O que deseja fazer?
-      0. Apagar grupo
-      1. Listar postagens
-      2. Listar membros
-      3. Criar um post
-      4. Responder a um post
-      5. Voltar para a sessão de Grupos
-      6. Apagar uma postagem
-      7. Apagar um comentário de uma postagem
-      8. Listar solicitações de participação
-      9. Remover um membro
-      10. Remover e bloquear um membro
-      11. Aceitar solicitação de participação
-      12. Rejeitar solicitação de participação`
-    : `
-      O que deseja fazer?
-      0. Sair do grupo
-      1. Listar postagens
-      2. Listar membros
-      3. Criar um post
-      4. Responder a um post
-      5. Voltar para a sessão de Grupos`
+  const text = `
+      Você está no grupo ${group.name} (membro).
+      1. Voltar para a sessão de Grupos
+      2. Ir para sessão de posts
+      3. Listar membros
+      4. Sair do grupo`
 
   var options = {
-    0: async () => {
-      if (isAdmin) {
-        if (await Group.remove(global.selfId, group.id)) {
-          console.log(`Grupo ${group.name} apagado.`)
-        } else {
-          console.log('Erro ao processar a remoção de grupo')
-        }
-        
-        sectionScreen()
-      } else {
-        if (await GroupMembership.remove(global.selfId, group.id)) {
-          console.log(`Você saiu do grupo ${group.name}.`)
-        } else {
-          console.log('Erro ao processar saída de grupo.')
-        }
-
-        sectionScreen()
-      }
-    },
-    1: async () => {
-      const posts = await GroupPost.findByGroup(group.id)
-      console.log('Posts neste grupo: ', posts)
-      asMemberScreen(group.id)
-    },
-    2: async () => {
-      // TODO: fetch real data [IM]
+    1: next,
+    2: () => GroupPost.sectionScreen(group),
+    3: async () => {
       const members = await GroupMembership.list(group.id)
-      console.log('Os membros são ', members)
-      asMemberScreen(group.id)
+      console.log('Membros:', members)
+      asMemberScreen(group, next)
     },
-    3: groupPostScreen,
     4: async () => {
-      groupPostCommentScreen(group.id)
-    },
-    5: function() {
-      console.log('Voltando para a sessão de Grupos.')
-      sectionScreen()
-    }
-  }
-
-  if (isAdmin) {
-    options = {
-      ...options,
-      6: removePostScreen,
-      7: undefined,
-      8: async () => {
-        listMembershipRequestsScreen(group)
-      },
-      9: undefined,
-      10: undefined,
-      11: async () => {
-        const userId = await ask('userId')
-        
-        if (await GroupRequest.remove(userId, group.id)) {
-          if (await GroupMembership.create(global.selfId, userId, group.id, false)) {
-            const user = await User.findById(global.selfId, userId)
-            console.log(`${user.name} se tornou um membro.`)
-          } else {
-            console.log('Erro ao processar solicitação de membro.')
-          }
-        } else {
-          console.log('Este usuário não solicitou participação no grupo.')
-        }
-
-        asMemberScreen(group)
-      },
-      12: async () => {
-        const userId = await ask('userId')
-        
-        if (await GroupRequest.remove(userId, group.id)) {
-          const user = await User.findById(global.selfId, userId)
-          if (user) {
-            console.log(`Solicitação de ${user.name} rejeitada.`)
-          } else {
-            console.log('Solicitação rejeitada.')
-          }
-        } else {
-          console.log('Este usuário não solicitou participação no grupo.')
-        }
-
-        asMemberScreen(group)
+      if (await GroupMembership.remove(global.selfId, group.id)) {
+        console.log(`Você saiu do grupo ${group.id}`)
+      } else {
+        console.log('Erro ao processar saída de grupo.')
       }
+
+      next()
     }
   }
 
   handleInput(text, options, asMemberScreen)
 }
 
-export async function listMembershipRequestsScreen(group) {
-  logWhere('listMembershipRequestsScreen')
-  const requests = await GroupRequest.findAllByGroup(group.id)
-  console.log('Solicitações de participação: ', requests)
-  asMemberScreen(group)
-}
+async function asAdminScreen(group, next) {
+  logWhere('asMemberScreen')
 
-export async function removePostScreen(groupId) {
-  logWhere('removePostScreen')
-  console.log('Administrador, qual o id da postagem deseja apagar?')
-  const postId = await ask('id')
-  await GroupPost.remove(global.selfId, postId)
-  console.log('Postagem removida com sucesso.')
-  asMemberScreen(groupId)
-}
+  const current = () => asAdminScreen(group, next)
 
+  const text = `
+      Você está no grupo ${group.name} (admin).
+      1. Voltar para a sessão de Grupos
+      2. Ir para sessão de posts
+      3. Listar membros
+      4. Remover um membro
+      5. Bloquear um membro
+      6. Listar solicitações de participação
+      7. Aceitar solicitação de participação
+      8. Rejeitar solicitação de participação
+      9. Apagar grupo`
 
-export async function groupPostScreen(groupId) {
-  logWhere('groupPostScreen')
+  var options = {
+    // Voltar
+    1: next,
+    // Posts
+    2: () => groupPost.sectionScreen(() => current()),
+    // Membros
+    3: async () => {
+      const members = await GroupMembership.list(group.id)
+      console.log('Membros:', members)
+      current()
+    },
+    // Remover membro
+    4: async () => {
+      const memberId = await ask('member_id')
 
-  console.warn('Not implemented yet.')
+      if (memberId) {
+        const user = await User.findById(memberId)
+  
+        if (user && await GroupMembership.remove(memberId, group.id)) {
+          console.log(`O usuário '${user.name}' foi removido do grupo '${group.name}'.`)
+          return next()
+        }
+      }
 
-  asMemberScreen(groupId)
-}
+      console.log('Erro ao processar remoção de membro de grupo.')
+      next()
+    },
+    // Bloquear membro
+    5: async () => {
+      console.log('NOT IMPLEMENTED')
+    },
+    // Solicitações
+    6: async () => {
+      const requests = await GroupRequest.findAllByGroup(group.id)
+      console.log('Solicitações de participação:', requests)
+      current()
+    },
+    // Aceitar solicitação
+    7: async () => {
+      const userId = await ask('userId')
+      
+      if (await GroupRequest.remove(userId, group.id)) {
+        if (await GroupMembership.create(global.selfId, userId, group.id, false)) {
+          const user = await User.findById(global.selfId, userId)
+          console.log(`${user.name} se tornou um membro.`)
+        } else {
+          console.log('Erro ao processar solicitação de membro.')
+        }
+      } else {
+        console.log('Este usuário não solicitou participação no grupo.')
+      }
 
-export async function groupPostCommentScreen(groupId) {
-  logWhere('groupPostCommentScreen')
+      current()
+    },
+    // Rejeitar solicitação
+    8: async () => {
+      const userId = await ask('userId')
+      
+      if (await GroupRequest.remove(userId, group.id)) {
+        const user = await User.findById(global.selfId, userId)
+        if (user) {
+          console.log(`Solicitação de ${user.name} rejeitada.`)
+        } else {
+          console.log('Solicitação rejeitada.')
+        }
+      } else {
+        console.log('Este usuário não solicitou participação no grupo.')
+      }
 
-  console.warn('Not implemented yet.')
+      current()
+    },
+    // Apagar grupo
+    9: async () => {
+      if (await Group.remove(global.selfId, group.id)) {
+        console.log(`Grupo ${group.name} apagado.`)
+      } else {
+        console.log('Erro ao processar a remoção de grupo')
+      }
+      
+      next()
+    }
+  }
 
-  asMemberScreen(groupId)
+  handleInput(text, options, asMemberScreen)
 }
