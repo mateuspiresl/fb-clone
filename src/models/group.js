@@ -90,7 +90,6 @@ export async function findAll() {
  */
 export async function findById(groupId) {
   log('findAll', ...arguments)
-  console.log(groupId, 'aefaefaefaeaef')
   return await db.query(findByIdQuery({groupId}))
 }
 
