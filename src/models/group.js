@@ -1,7 +1,6 @@
 import Database from '../database'
 import { logAllowed } from '../config'
 import { createLogger } from '../utils'
-import * as GroupMembership from './group-membership'
 
 const db = new Database()
 const log = createLogger('models/group', logAllowed.queries)
@@ -20,7 +19,9 @@ const findAllByCreatorQuery = db.prepare(
 )
 
 const findAllQuery = db.prepare(
-  'SELECT * FROM `group`;'
+  'SELECT * FROM `group` AS g ' +
+  'LEFT JOIN group_blocking AS gb ON g.id=gb.group_id ' +
+  'WHERE gb.group_id IS NULL OR gb.user_id!=:selfId;'
 )
 
 const findByIdQuery = db.prepare(
@@ -79,9 +80,9 @@ export async function findAllByCreator(creatorId) {
  * Returns all the existent groups.
  * @returns {Promise<Array<string>>} The ids of all existent groups.
  */
-export async function findAll() {
+export async function findAll(selfId) {
   log('findAll', ...arguments)
-  return await db.query(findAllQuery())
+  return await db.query(findAllQuery({selfId}))
 }
 
 /**

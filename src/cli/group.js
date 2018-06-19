@@ -5,6 +5,7 @@ import * as Group from '../models/group'
 import * as GroupMembership from '../models/group-membership'
 import * as GroupRequest from '../models/group-request'
 import * as GroupPost from '../models/group-post'
+import * as GroupBlocking from '../models/group-blocking'
 
 function logWhere(method) {
   console.log('\n---- group.' + method)
@@ -88,7 +89,7 @@ async function listGroupsThatImMember(next) {
 
 async function listAllGroups(next) {
   logWhere('listAllGroups')
-  const allGroups = await Group.findAll()
+  const allGroups = await Group.findAll(global.selfId)
   console.log('Listando todos os grupos')
   console.log(allGroups)
   next()
@@ -183,7 +184,8 @@ async function asAdminScreen(group, next) {
       6. Listar solicitações de participação
       7. Aceitar solicitação de participação
       8. Rejeitar solicitação de participação
-      9. Apagar grupo`
+      9. Apagar grupo
+      10. Desbloquear um membro`
 
   var options = {
     // Voltar
@@ -214,7 +216,12 @@ async function asAdminScreen(group, next) {
     },
     // Bloquear membro
     5: async () => {
-      console.log('NOT IMPLEMENTED')
+      console.log('Qual membro deseja bloquear e remover do grupo?')
+      const userId = await ask('member_id')
+      await GroupMembership.remove(userId, group.id)
+      await GroupBlocking.create(userId, group.id)
+      console.log('Usuário bloqueado com sucesso.')
+      current()
     },
     // Solicitações
     6: async () => {

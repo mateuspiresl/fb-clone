@@ -88,7 +88,7 @@ export async function listGroupsThatImMember() {
 
 export async function listAllGroups() {
   logWhere('listAllGroups')
-  const allGroups = await Group.findAll()
+  const allGroups = await Group.findAll(global.selfId)
   console.log('Listando todos os grupos')
   console.log(allGroups)
   sectionScreen()
