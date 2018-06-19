@@ -8,10 +8,7 @@ function logWhere(method) {
   console.log('\n---- group.' + method)
 }
 
-global.defaultNext
-
 export async function sectionScreen(next) {
-  global.defaultNext = next
   logWhere('sectionScreen')
 
   const text = `
@@ -24,7 +21,7 @@ export async function sectionScreen(next) {
     6. Criar um grupo`
 
   const options = {
-    1: global.defaultNext,
+    1: next,
     2: async () => {
       const groupsThatUserOwns = await Group.findAllByCreator(global.selfId)
       if (groupsThatUserOwns.length === 0) {
@@ -183,6 +180,7 @@ export async function asMemberScreen(groupId) {
   const text = isAdmin ?
     `
       O que deseja fazer?
+      0. Apagar grupo
       1. Listar postagens
       2. Listar membros
       3. Criar um post
@@ -197,6 +195,7 @@ export async function asMemberScreen(groupId) {
     : // otherwhise [IM]
     `
       O que deseja fazer?
+      0. Sair do grupo
       1. Listar postagens
       2. Listar membros
       3. Criar um post
@@ -204,6 +203,17 @@ export async function asMemberScreen(groupId) {
       5. Voltar para a sessão de Grupos`
 
   var options = {
+    0: async () => {
+      if (isAdmin) {
+        Group.remove(global.selfId, groupId)
+        console.log('Apagando grupo.')
+        sectionScreen()
+      } else {
+        console.log('Abandonando o grupo.')
+        console.warn('Not implemented yet')
+        process.exit()
+      }
+    },
     1: async () => {
       const posts = await GroupPost.findByGroup(groupId)
       console.log('Posts neste grupo: ', posts)
@@ -237,7 +247,8 @@ export async function asMemberScreen(groupId) {
       10: undefined,
       11: async () => {
         console.log('Digite o id da solicitação que deseja manipular')
-        // const id = ask['id']
+        const id = ask['id']
+        const request = GroupRequest.findOne()
         console.warn('Not implemented yet.')
 
       }
