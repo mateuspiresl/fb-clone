@@ -19,9 +19,10 @@ function logResult(result, success, fail) {
   }
 }
 
-export async function selfFeedScreen(next) {
+export default async function UserSection(next) {
   logWhere('selfFeedScreen')
 
+  const current = () => UserSection(next)
   const user = await User.findById(global.selfId, global.selfId)
   const text = `
     Olá, ${user.name}.
@@ -35,16 +36,16 @@ export async function selfFeedScreen(next) {
     1: async () => {
       const posts = await FeedPost.findByOwner(global.selfId, global.selfId)
       console.log('Posts:', posts.map(_=>_))
-      selfFeedScreen()
+      current()
     },
     2: async () => {
       const fields = await ask(['content', 'photo'])
       const postId = await FeedPost.create(global.selfId, global.selfId, fields)
       console.log(`Post ${postId} criado.`)
-      selfFeedScreen()
+      current()
     },
-    3: sectionScreen,
-    4: () => GroupSection(selfFeedScreen),
+    3: () => sectionScreen(current),
+    4: () => GroupSection(current),
     5: () => {
       console.log('Usuário deslogado.')
       global.selfId = null
@@ -52,11 +53,13 @@ export async function selfFeedScreen(next) {
     }
   }
 
-  handleInput(text, options, selfFeedScreen)
+  handleInput(text, options, current)
 }
 
-export async function sectionScreen() {
+export async function sectionScreen(next) {
   logWhere('sectionScreen')
+
+  const current = () => sectionScreen(next)
   const { selfId } = global
 
   const text = `
@@ -68,32 +71,32 @@ export async function sectionScreen() {
     5. Listar solicitações de amizade`
 
   const options = {
-    1: selfFeedScreen,
+    1: next,
     2: async () => {
       const friends = await Friendship.findAll(selfId)
       console.log('Friends:', friends.map(_=>_))
-      sectionScreen()
+      current()
     },
     3: async () => {
       const users = await User.findAll(selfId)
       console.log('Users:', users.map(_=>_))
-      sectionScreen()
+      current()
     },
     4: async () => {
       const userId = await ask('id')
-      profileScreen(userId)
+      profileScreen(userId, current)
     },
     5: async () => {
       const users = await FriendshipRequest.findAll(selfId)
       console.log('Users:', users.map(_=>_))
-      sectionScreen()
+      current()
     }
   }
 
-  handleInput(text, options, sectionScreen)
+  handleInput(text, options, current)
 }
 
-export async function profileScreen(userId) {
+export async function profileScreen(userId, next) {
   logWhere('profileScreen')
 
   const { selfId } = global
@@ -105,21 +108,21 @@ export async function profileScreen(userId) {
     let resturnValues
   
     if (user.is_friend) {
-      resturnValues = profileScreenAsFriend(user)
+      resturnValues = profileScreenAsFriend(user, next)
     } else if (user.is_blocked) {
-      resturnValues = profileScreenAsBlocker(user)
+      resturnValues = profileScreenAsBlocker(user, next)
     } else if (user.is_friendship_requester) {
-      resturnValues = profileScreenAsFriendshipRequested(user)
+      resturnValues = profileScreenAsFriendshipRequested(user, next)
     } else if (user.has_friendship_requested) {
-      resturnValues = profileScreenAsFriendshipRequester(user)
+      resturnValues = profileScreenAsFriendshipRequester(user, next)
     } else {
-      resturnValues = profileScreenAsCommon(user)
+      resturnValues = profileScreenAsCommon(user, next)
     }
   
-    handleInput(...resturnValues, sectionScreen)
+    handleInput(...resturnValues, next)
   } else {
     console.log(`Usuário ${userId} não encontrado.`)
-    sectionScreen()
+    next()
   }
 }
 
@@ -128,13 +131,14 @@ async function acceptFriendshipRequest(userId) {
   return removed && await Friendship.create(global.selfId, userId)
 }
 
-async function seeFeed(user) {
+async function seeFeed(user, next) {
   const posts = await FeedPost.findByOwner(global.selfId, user.id)
   console.log('Feed:', posts)
-  profileScreen(user.id)
+  next()
 }
 
-function profileScreenAsCommon(user) {
+function profileScreenAsCommon(user, next) {
+  const current = () => profileScreen(user.id, next)
   const { selfId } = global
 
   const text = `
@@ -145,28 +149,29 @@ function profileScreenAsCommon(user) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: () => seeFeed(user),
+    1: () => seeFeed(user, current),
     2: async () => {
       const requested = await FriendshipRequest.create(selfId, user.id)
 
       logResult(requested, `Você solicitou a amizade de ${user.name}.`,
         `Erro ao processar a solicitação de amizade para ${user.name}.`)
-      profileScreen(user.id)
+      current()
     },
     3: async () => {
       const blocked = await UserBlocking.create(global.selfId, user.id)
 
       logResult(blocked, `Você bloqueou ${user.name}.`,
         `Erro ao processar o bloqueio de ${user.name}.`)
-      profileScreen(user.id)
+      current()
     },
-    4: sectionScreen
+    4: next
   }
   
   return [text, options]
 }
 
-function profileScreenAsFriend(user) {
+function profileScreenAsFriend(user, next) {
+  const current = () => profileScreen(user.id, next)
   const { selfId } = global
 
   const text = `
@@ -177,26 +182,28 @@ function profileScreenAsFriend(user) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: () => seeFeed(user),
+    1: () => seeFeed(user, current),
     2: async () => {
       const fields = await ask(['content', 'picture'])
       const postId = await FeedPost.create(selfId, user.id, fields)
 
       console.log(`Post ${postId} criado no mural de ${user.name}.`)
-      profileScreen(user.id)
+      current()
     },
     3: async () => {
       await Friendship.remove(selfId, user.id)
       console.log(`A sua amizade com ${user.name} foi removida.`)
-      profileScreen(user.id)
+      current()
     },
-    4: sectionScreen
+    4: next
   }
 
   return [text, options]
 }
 
-function profileScreenAsBlocker(user) {
+function profileScreenAsBlocker(user, next) {
+  const current = () => profileScreen(user.id, next)
+
   const text = `
     Você está no perfil de ${user.name} (bloqueado).
     1. Desbloquear
@@ -208,15 +215,16 @@ function profileScreenAsBlocker(user) {
 
       logResult(unblocked, `Você desbloqueou ${user.name}.`,
         `Erro ao processar o desbloqueio de ${user.name}.`)
-      profileScreen(user.id)
+      current()
     },
-    2: sectionScreen
+    2: next
   }
 
   return [text, options]
 }
 
-function profileScreenAsFriendshipRequester(user) {
+function profileScreenAsFriendshipRequester(user, next) {
+  const current = () => profileScreen(user.id, next)
   const { selfId } = global
 
   const text = `
@@ -233,7 +241,7 @@ function profileScreenAsFriendshipRequester(user) {
 
       logResult(requested, `Você desfez a solicitção de amizade para ${user.name}.`,
         `Erro ao tentar desfazer a solicitação de amizade para ${user.name}.`)
-      profileScreen(user.id)
+      current()
     },
     3: async () => {
       const undoneRequest = await FriendshipRequest.remove(selfId, user.id)
@@ -247,15 +255,16 @@ function profileScreenAsFriendshipRequester(user) {
         console.error(`Erro ao processar o bloqueio de ${user.name}.`)
       }
 
-      profileScreen(user.id)
+      current()
     },
-    4: sectionScreen
+    4: next
   }
   
   return [text, options]
 }
 
-function profileScreenAsFriendshipRequested(user) {
+function profileScreenAsFriendshipRequested(user, next) {
+  const current = () => profileScreen(user.id, next)
   const { selfId } = global
 
   const text = `
@@ -266,13 +275,13 @@ function profileScreenAsFriendshipRequested(user) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: () => seeFeed(user),
+    1: () => seeFeed(user, current),
     2: async () => {
       const accepted = await acceptFriendshipRequest(user.id)
 
       logResult(accepted, `Você aceitou a solicitção de amizade de ${user.name}.`,
         `Erro ao tentar aceitar a solicitação de amizade de ${user.name}.`)
-      profileScreen(user.id)
+      current()
     },
     3: async () => {
       const undoneRequest = await FriendshipRequest.remove(user.id, selfId)
@@ -286,9 +295,9 @@ function profileScreenAsFriendshipRequested(user) {
         console.error(`Erro ao processar o bloqueio de ${user.name}.`)
       }
 
-      profileScreen(user.id)
+      current()
     },
-    4: sectionScreen
+    4: next
   }
 
   return [text, options]

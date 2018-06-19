@@ -1,5 +1,5 @@
 import * as User from '../models/user'
-import * as userRoute from './user'
+import UserSection from './user'
 import { ask, handle as handleInput } from './input'
 
 
@@ -61,7 +61,7 @@ async function signIn() {
   if (userId) {
     console.log(`Usuário ${userId} autenticado com sucesso.`)
     global.selfId = userId
-    userRoute.selfFeedScreen(authenticationScreen)
+    UserSection(authenticationScreen)
   } else {
     console.log('Credenciais inválidas.')
     authenticationScreen()
