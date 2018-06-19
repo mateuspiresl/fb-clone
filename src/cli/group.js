@@ -6,13 +6,8 @@ import * as GroupMembership from '../models/group-membership'
 import * as GroupRequest from '../models/group-request'
 import * as GroupBlocking from '../models/group-blocking'
 
-function logWhere(method) {
-  console.log('\n---- group.' + method)
-}
 
 export default async function GroupSection(next) {
-  logWhere('sectionScreen')
-
   const current = () => GroupSection(next)
 
   const text = `
@@ -55,8 +50,6 @@ export default async function GroupSection(next) {
 }
 
 async function groupScreen(groupId, next) {
-  logWhere('groupScreen')
-
   const group = await Group.findById(groupId)
 
   if (!group) {
@@ -80,14 +73,12 @@ async function groupScreen(groupId, next) {
 }
 
 async function listGroupsThatImMember(next) {
-  logWhere('listGroupsThatImMember')
   const allGroups = await GroupMembership.listUserMemberships(global.selfId)
   console.log('Listando todos os grupos que sou membro ', allGroups)
   next()
 }
 
 async function listAllGroups(next) {
-  logWhere('listAllGroups')
   const allGroups = await Group.findAll(global.selfId)
   console.log('Listando todos os grupos')
   console.log(allGroups)
@@ -95,8 +86,6 @@ async function listAllGroups(next) {
 }
 
 async function asNotMemberScreen(group, next) {
-  logWhere('asNotMemberScreen')
-
   // Check wether the user has requested to join or not [IM]
   const hasPendingRequest = await GroupRequest.exists(global.selfId, group.id)
 
@@ -137,8 +126,6 @@ async function asNotMemberScreen(group, next) {
 }
 
 async function asMemberScreen(group, next) {
-  logWhere('asMemberScreen')
-
   const text = `
       Você está no grupo ${group.name} (membro).
       1. Voltar para a sessão de Grupos
@@ -169,8 +156,6 @@ async function asMemberScreen(group, next) {
 }
 
 async function asAdminScreen(group, next) {
-  logWhere('asMemberScreen')
-
   const current = () => asAdminScreen(group, next)
 
   const text = `

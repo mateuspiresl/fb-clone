@@ -4,13 +4,8 @@ import * as GroupPost from '../models/group-post'
 import * as Comment from '../models/comment'
 import * as CommentAnswer from '../models/comment-answer'
 
-function logWhere(method) {
-  console.log('\n---- group.post.' + method)
-}
 
 export default async function GroupPostSection(group, next) {
-  logWhere('section')
-
   const current = () => GroupPostSection(group, next)
   
   const posts = await GroupPost.findByGroup(group.id)
@@ -49,8 +44,6 @@ export default async function GroupPostSection(group, next) {
 }
 
 async function viewPost(group, post, next) {
-  logWhere('viewPost')
-
   if (!post) {
     console.log('Post não encontrado.')
     return next()

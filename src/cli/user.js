@@ -7,10 +7,6 @@ import * as FriendshipRequest from '../models/friendship-request'
 import * as UserBlocking from '../models/user-blocking'
 
 
-function logWhere(method) {
-  console.log(`\n----(${global.selfId}) user.${method}`)
-}
-
 function logResult(result, success, fail) {
   if (result) {
     console.log(success)
@@ -20,8 +16,6 @@ function logResult(result, success, fail) {
 }
 
 export default async function UserSection(next) {
-  logWhere('selfFeedScreen')
-
   const current = () => UserSection(next)
   const user = await User.findById(global.selfId, global.selfId)
   const text = `
@@ -59,8 +53,6 @@ export default async function UserSection(next) {
 }
 
 export async function sectionScreen(next) {
-  logWhere('sectionScreen')
-
   const current = () => sectionScreen(next)
   const { selfId } = global
 
@@ -99,8 +91,6 @@ export async function sectionScreen(next) {
 }
 
 export async function profileScreen(userId, next) {
-  logWhere('profileScreen')
-
   const { selfId } = global
   const user = await User.findById(selfId, userId)
 

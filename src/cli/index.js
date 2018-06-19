@@ -10,18 +10,9 @@ import { ask, handle as handleInput } from './input'
 global.selfId = null
 
 
-/* UTILS */
-
-function logWhere(where) {
-  console.log('\n---- index.' + where)
-}
-
-
 /* ROUTES */
 
 async function authenticationScreen() {
-  logWhere('authenticationScreen')
-
   const text = `
     1. Sign Up
     2. Sign In
@@ -37,8 +28,6 @@ async function authenticationScreen() {
 }
 
 async function signUp() {
-  logWhere('signUp')
-
   const fields = await ask(['name', 'username', 'password'])
   console.log('signUp', fields)
 
@@ -53,8 +42,6 @@ async function signUp() {
 }
 
 async function signIn() {
-  logWhere('signIn')
-
   const fields = await ask(['username', 'password'])
   const userId = await User.matchCredencials(fields.username, fields.password)
 

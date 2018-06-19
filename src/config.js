@@ -3,7 +3,7 @@ export const SECRET_TOKEN = 'secret'
 export const logAllowed = {
   auth: false,
   requests: false,
-  queries: true,
-  sql: true,
+  queries: false,
+  sql: false,
   clearSql: false
 }
