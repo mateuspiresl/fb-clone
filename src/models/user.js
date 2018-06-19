@@ -25,7 +25,7 @@ const matchCredencialsQuery = db.prepare(
 )
 
 const findByIdQuery = db.prepare(
-  'SELECT u.id, u.username, u.name, ' +
+  'SELECT u.id, u.username, u.name, u.photo, ' +
   'CASE WHEN EXISTS (SELECT * FROM user_friendship WHERE ' +
     'user_a_id=:selfId AND user_b_id=:userId OR ' +
     'user_a_id=:userId AND user_b_id=:selfId ' +
@@ -45,7 +45,7 @@ const findByIdQuery = db.prepare(
 )
 
 const findAllQuery = db.prepare(
-  'SELECT u.id, u.username, u.name FROM user as u ' +
+  'SELECT u.id, u.username, u.name, u.photo FROM user as u ' +
   'LEFT JOIN user_blocking as ub ON u.id=ub.blocker_id ' +
   'WHERE u.id!=:selfId AND (ub.blocker_id IS NULL OR ub.blocked_id!=:selfId);'
 )

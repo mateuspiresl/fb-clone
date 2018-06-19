@@ -33,7 +33,7 @@ export default async function UserSection(next) {
       current()
     },
     2: async () => {
-      const fields = await ask(['content', 'photo', 'isPublic'])
+      const fields = await ask(['content', 'picture', 'isPublic'])
       fields.isPublic = fields.isPublic == '1'
 
       const postId = await FeedPost.create(global.selfId, global.selfId, fields)

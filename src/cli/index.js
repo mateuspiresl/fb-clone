@@ -28,14 +28,14 @@ async function authenticationScreen() {
 }
 
 async function signUp() {
-  const fields = await ask(['name', 'username', 'password'])
+  const fields = await ask(['name', 'username', 'password', 'photo'])
   console.log('signUp', fields)
 
   if (!fields.name || !fields.username || !fields.password) {
     throw new Error('Invalid credencials')
   }
 
-  const userId = await User.create(fields.username, fields.password, fields.name)
+  const userId = await User.create(fields.username, fields.password, fields.name, null, fields.photo)
   console.log(`Você foi registrado com o id ${userId}.`)
 
   authenticationScreen()
