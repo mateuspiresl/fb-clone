@@ -196,13 +196,21 @@ export async function asMemberScreen(group) {
   var options = {
     0: async () => {
       if (isAdmin) {
-        Group.remove(global.selfId, groupId)
-        console.log('Apagando grupo.')
+        if (await Group.remove(global.selfId, group.id)) {
+          console.log(`Grupo ${group.name} apagado.`)
+        } else {
+          console.log('Erro ao processar a remoção de grupo')
+        }
+        
         sectionScreen()
       } else {
-        console.log('Abandonando o grupo.')
-        console.warn('Not implemented yet')
-        process.exit()
+        if (await GroupMembership.remove(global.selfId, group.id)) {
+          console.log(`Você saiu do grupo ${group.name}.`)
+        } else {
+          console.log('Erro ao processar saída de grupo.')
+        }
+
+        sectionScreen()
       }
     },
     1: async () => {
