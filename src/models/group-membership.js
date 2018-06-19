@@ -81,7 +81,7 @@ export async function remove(userId, groupId) {
   try {
     const params = { userId, groupId }
     const result = await db.query(removeQuery(params))
-    return result.info.insertId
+    return result.info.affectedRows == '1'
   }
   catch (error) {
     if (error.code === 1062) return false

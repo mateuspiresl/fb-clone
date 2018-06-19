@@ -19,7 +19,7 @@ const findAllQuery = db.prepare(
 
 
 const unblockQuery = db.prepare(
-  'DELETE FROM group_blocking WHERE user_id=:userId AND group_id=:gloupId;'
+  'DELETE FROM group_blocking WHERE user_id=:userId AND group_id=:groupId;'
 )
 
 

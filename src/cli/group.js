@@ -21,7 +21,7 @@ export default async function GroupSection(next) {
     1. Voltar para meu feed
     2. Listar grupos que sou administrador
     3. Listar grupos que sou membro
-    4. Listar todos os groups
+    4. Listar todos os grupos
     5. Ir para um grupo
     6. Criar um grupo`
 
@@ -180,12 +180,13 @@ async function asAdminScreen(group, next) {
       2. Ir para sessão de posts
       3. Listar membros
       4. Remover um membro
-      5. Bloquear um membro
-      6. Listar solicitações de participação
-      7. Aceitar solicitação de participação
-      8. Rejeitar solicitação de participação
-      9. Apagar grupo
-      10. Desbloquear um membro`
+      5. Listar membros bloeados
+      6. Bloquear um membro
+      7. Desbloquear um usuário.
+      8. Listar solicitações de participação
+      9. Aceitar solicitação de participação
+      10. Rejeitar solicitação de participação
+      11. Apagar grupo`
 
   var options = {
     // Voltar
@@ -203,7 +204,7 @@ async function asAdminScreen(group, next) {
       const memberId = await ask('member_id')
 
       if (memberId) {
-        const user = await User.findById(memberId)
+        const user = await User.findById(global.selfId, memberId)
   
         if (user && await GroupMembership.remove(memberId, group.id)) {
           console.log(`O usuário '${user.name}' foi removido do grupo '${group.name}'.`)
@@ -214,8 +215,14 @@ async function asAdminScreen(group, next) {
       console.log('Erro ao processar remoção de membro de grupo.')
       next()
     },
-    // Bloquear membro
+    // Listar membros bloqueados
     5: async () => {
+      const blockedUsers = await GroupBlocking.findAllBlockedUsers(group.id)
+      console.log('usuários bloqueados: ', blockedUsers)
+      current()
+    }, 
+    // Bloquear membro
+    6: async () => {
       console.log('Qual membro deseja bloquear e remover do grupo?')
       const userId = await ask('member_id')
       await GroupMembership.remove(userId, group.id)
@@ -223,14 +230,22 @@ async function asAdminScreen(group, next) {
       console.log('Usuário bloqueado com sucesso.')
       current()
     },
+    // Desbloquear usuário
+    7: async () => {
+      console.log('Qual usuário deseja desbloquear?')
+      const userId = await ask('blocked_user_id')
+      await GroupBlocking.unblock(userId, group.id)
+      console.log('Usuário desbloqueado com sucesso.')
+      current()
+    },
     // Solicitações
-    6: async () => {
+    8: async () => {
       const requests = await GroupRequest.findAllByGroup(group.id)
       console.log('Solicitações de participação:', requests)
       current()
     },
     // Aceitar solicitação
-    7: async () => {
+    9: async () => {
       const userId = await ask('userId')
       
       if (await GroupRequest.remove(userId, group.id)) {
@@ -247,7 +262,7 @@ async function asAdminScreen(group, next) {
       current()
     },
     // Rejeitar solicitação
-    8: async () => {
+    10: async () => {
       const userId = await ask('userId')
       
       if (await GroupRequest.remove(userId, group.id)) {
@@ -264,7 +279,7 @@ async function asAdminScreen(group, next) {
       current()
     },
     // Apagar grupo
-    9: async () => {
+    11: async () => {
       if (await Group.remove(global.selfId, group.id)) {
         console.log(`Grupo ${group.name} apagado.`)
       } else {
