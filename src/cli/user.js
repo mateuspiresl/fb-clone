@@ -28,7 +28,7 @@ export default async function UserSection(next) {
     Olá, ${user.name}.
     1. Ver meu feed
     2. Criar um post
-    3. Navegar para sessão de Usuarios
+    3. Navegar para sessão de Usuários
     4. Navegar para sessão de Grupos
     5. Deslogar`
 
@@ -39,7 +39,9 @@ export default async function UserSection(next) {
       current()
     },
     2: async () => {
-      const fields = await ask(['content', 'photo'])
+      const fields = await ask(['content', 'photo', 'isPublic'])
+      fields.isPublic = fields.isPublic == '1'
+
       const postId = await FeedPost.create(global.selfId, global.selfId, fields)
       console.log(`Post ${postId} criado.`)
       current()
@@ -131,7 +133,7 @@ async function acceptFriendshipRequest(userId) {
   return removed && await Friendship.create(global.selfId, userId)
 }
 
-async function seeFeed(user, next) {
+async function viewFeed(user, next) {
   const posts = await FeedPost.findByOwner(global.selfId, user.id)
   console.log('Feed:', posts)
   next()
@@ -149,7 +151,7 @@ function profileScreenAsCommon(user, next) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: () => seeFeed(user, current),
+    1: () => viewFeed(user, current),
     2: async () => {
       const requested = await FriendshipRequest.create(selfId, user.id)
 
@@ -182,7 +184,7 @@ function profileScreenAsFriend(user, next) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: () => seeFeed(user, current),
+    1: () => viewFeed(user, current),
     2: async () => {
       const fields = await ask(['content', 'picture'])
       const postId = await FeedPost.create(selfId, user.id, fields)
@@ -235,7 +237,7 @@ function profileScreenAsFriendshipRequester(user, next) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: () => seeFeed(user),
+    1: () => viewFeed(user),
     2: async () => {
       const requested = await FriendshipRequest.remove(selfId, user.id)
 
@@ -271,11 +273,12 @@ function profileScreenAsFriendshipRequested(user, next) {
     Você está no perfil de ${user.name}.
     1. Ver o feed
     2. Aceitar solicitação de amizade
-    3. Bloquear
-    4. Voltar para a sessão de usuários`
+    3. Rejeitar solicitação de amizade
+    4. Bloquear
+    5. Voltar para a sessão de usuários`
 
   const options = {
-    1: () => seeFeed(user, current),
+    1: () => viewFeed(user, current),
     2: async () => {
       const accepted = await acceptFriendshipRequest(user.id)
 
@@ -284,6 +287,13 @@ function profileScreenAsFriendshipRequested(user, next) {
       current()
     },
     3: async () => {
+      const accepted = await FriendshipRequest.remove(user.id, global.selfId)
+
+      logResult(accepted, `Você rejeitou a solicitção de amizade de ${user.name}.`,
+        `Erro ao tentar rejeitar a solicitação de amizade de ${user.name}.`)
+      current()
+    },
+    4: async () => {
       const undoneRequest = await FriendshipRequest.remove(user.id, selfId)
       
       if (undoneRequest) {
@@ -297,7 +307,7 @@ function profileScreenAsFriendshipRequested(user, next) {
 
       current()
     },
-    4: next
+    5: next
   }
 
   return [text, options]
