@@ -15,6 +15,12 @@ const createQuery = db.prepare(
   ');'
 )
 
+const existsQuery = db.prepare(
+  'SELECT COUNT(*) FROM user_friendship ' +
+  'WHERE user_a_id=:userAId AND user_b_id=:userBId ' +
+    'OR user_a_id=:userBId AND user_b_id=:userAId;'
+)
+
 const findAllQuery = db.prepare(
   'SELECT u.id, u.name, u.photo FROM ( ' +
     'SELECT user_a_id as id FROM user_friendship WHERE user_b_id=:user_id ' +
@@ -50,6 +56,19 @@ export async function create(selfId, friendId) {
     if (error.code === 1062) return false
     else throw error
   }
+}
+
+/**
+ * Checks if a friendship between two users exists.
+ * @param {string} userAId The id of an user.
+ * @param {string} userBId The id of an user.
+ * @returns {Promise<boolean>} True if exists.
+ */
+export async function exists(userAId, userBId) {
+  log('exists', ...arguments)
+
+  const params = { userAId, userBId }
+  return (await db.query(existsQuery(params)))[0]['COUNT(*)'] == '1'
 }
 
 /**
