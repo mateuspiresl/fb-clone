@@ -25,16 +25,16 @@ CREATE TABLE IF NOT EXISTS `user_friendship_request` (
   `requester_id` int(11) NOT NULL,
   `requested_id` int(11) NOT NULL,
   PRIMARY KEY (`requester_id`, `requested_id`),
-  CONSTRAINT `requester` FOREIGN KEY (`requester_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `requested` FOREIGN KEY (`requested_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+  CONSTRAINT `friendship_requester` FOREIGN KEY (`requester_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `friendship_requested` FOREIGN KEY (`requested_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `user_blocking` (
   `blocker_id` int(11) NOT NULL,
   `blocked_id` int(11) NOT NULL,
   PRIMARY KEY (`blocker_id`, `blocked_id`),
-  CONSTRAINT `blocker` FOREIGN KEY (`blocker_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `blocked` FOREIGN KEY (`blocked_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+  CONSTRAINT `user_blocker` FOREIGN KEY (`blocker_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_blocked` FOREIGN KEY (`blocked_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `post` (
@@ -44,11 +44,24 @@ CREATE TABLE IF NOT EXISTS `post` (
   `picture` varchar(256) DEFAULT NULL,
   `is_public` boolean DEFAULT 1,
   PRIMARY KEY (`id`),
-  CONSTRAINT `authorship` FOREIGN KEY (`author_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `minimum_content` CHECK (
+  CONSTRAINT `post_authorship` FOREIGN KEY (`author_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `post_minimum_content` CHECK (
     `content` IS NOT NULL OR `picture` IS NOT NULL
   )
 );
+
+CREATE TABLE IF NOT EXISTS `feed_post` (
+  `post_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  PRIMARY KEY (`post_id`),
+  CONSTRAINT `feed_post_self` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `feed_post_owner` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+);
+
+-- Also delete the post 
+CREATE TRIGGER `feed_post_deletion`
+AFTER DELETE ON `feed_post` FOR EACH ROW
+  DELETE FROM `post` WHERE `id`=OLD.`post_id`;
 
 CREATE TABLE IF NOT EXISTS `comment` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -95,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `group` (
   `description` varchar(512) NOT NULL DEFAULT '',
   `picture` varchar(256),
   PRIMARY KEY (`id`),
-  CONSTRAINT `creator` FOREIGN KEY (`creator_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+  CONSTRAINT `group_creator` FOREIGN KEY (`creator_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
 );
 
 -- The hard approach for deleted creator: keep the group but pass ownership to another member
@@ -106,14 +119,14 @@ CREATE TABLE IF NOT EXISTS `group_post` (
   `post_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   PRIMARY KEY (`post_id`),
-  CONSTRAINT `itself` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `belonging` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
+  CONSTRAINT `group_post_self` FOREIGN KEY (`post_id`) REFERENCES `post`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `group_post_owner` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
 
--- The hard approach for deleted post group: also delete the post.
--- CREATE TRIGGER `group_post_deletion`
--- AFTER DELETE ON `group_post` FOR EACH ROW
---   DELETE FROM `post` WHERE `id`=OLD.`post_id`;
+-- Also delete the post
+CREATE TRIGGER `group_post_deletion`
+AFTER DELETE ON `group_post` FOR EACH ROW
+  DELETE FROM `post` WHERE `id`=OLD.`post_id`;
 
 CREATE TABLE IF NOT EXISTS `group_membership` (
   `user_id` int(11) NOT NULL,
@@ -134,8 +147,8 @@ CREATE TABLE IF NOT EXISTS `group_blocking` (
   `user_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   PRIMARY KEY (`user_id`, `group_id`),
-  CONSTRAINT `blocked_user` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `blocking_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
+  CONSTRAINT `group_blocked_user` FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `blocker_group` FOREIGN KEY (`group_id`) REFERENCES `group`(`id`) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS `group_membership_request` (
