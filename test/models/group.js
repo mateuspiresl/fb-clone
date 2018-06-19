@@ -73,7 +73,7 @@ describe('Models | Group', () => {
       should.exist(user2GroupCreationResult)
     })
 
-    const groups = await Group.findAll()
+    const groups = await Group.findAll(global.selfId)
     should.exist(groups)
     groups.should.be.an('array').that.has.length(10)
 
