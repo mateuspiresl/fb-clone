@@ -45,7 +45,7 @@ export async function create(requesterId, groupId) {
   try {
     const params = { requesterId, groupId }
     const result = await db.query(createQuery(params))
-    return result.info.insertId || null
+    return result.info.affectedRows == '1'
   }
   catch (error) {
     if (error.code === 1062) return false
@@ -78,16 +78,10 @@ export function findAllByGroup(groupId) {
 }
 
 
-export async function findOne(userId, groupId) {
-  try {
-    const result = await db.query(findOneQuery({ userId, groupId }))
-    console.log('\n\n', result, '\n\n')
-    return result.length > 0
-  }
-  catch (error) {
-    if (error.code === 1062) return false
-    else throw error
-  }
+export async function exists(userId, groupId) {
+  log('exists', ...arguments)
+  const result = await db.query(findOneQuery({ userId, groupId }))
+  return result.length > 0
 }
 
 /**
