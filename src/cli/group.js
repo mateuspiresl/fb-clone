@@ -1,10 +1,9 @@
 import { ask, handle as handleInput } from './input'
-import * as groupPost from './group.post'
+import GroupPostSection from './group.post'
 import * as User from '../models/user'
 import * as Group from '../models/group'
 import * as GroupMembership from '../models/group-membership'
 import * as GroupRequest from '../models/group-request'
-import * as GroupPost from '../models/group-post'
 import * as GroupBlocking from '../models/group-blocking'
 
 function logWhere(method) {
@@ -149,7 +148,7 @@ async function asMemberScreen(group, next) {
 
   var options = {
     1: next,
-    2: () => GroupPost.sectionScreen(group),
+    2: () => GroupPostSection(group, () => asMemberScreen(group, next)),
     3: async () => {
       const members = await GroupMembership.list(group.id)
       console.log('Membros:', members)
@@ -193,7 +192,7 @@ async function asAdminScreen(group, next) {
     // Voltar
     1: next,
     // Posts
-    2: () => groupPost.sectionScreen(() => current()),
+    2: () => GroupPostSection(group, () => current()),
     // Membros
     3: async () => {
       const members = await GroupMembership.list(group.id)

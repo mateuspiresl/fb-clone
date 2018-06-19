@@ -2,6 +2,7 @@ import Database from '../database'
 import { logAllowed } from '../config'
 import { createLogger } from '../utils'
 import * as Post from './post'
+import * as GroupMembership from './group-membership'
 
 
 const db = new Database()
@@ -19,18 +20,13 @@ const createQuery = db.prepare(
 const findByGroupQuery = db.prepare(
   'SELECT p.*, gp.group_id, u.name as user_name, u.photo as user_photo ' + 
   'FROM group_post as gp ' +
-  'INNER JOIN post as p ON p.id=gp.post_id ' +
+  'INNER JOIN post as p ON p.id=post_id ' +
   'INNER JOIN user as u ON u.id=p.author_id ' +
-  'WHERE gp.group_id=:groupId;'
+  'WHERE group_id=:groupId;'
 )
 
 const removeQuery = db.prepare(
-  'DELETE FROM group_post as gp ' +
-  'INNER JOIN post as p ON p.id=gp.post_id ' +
-  'INNER JOIN group_membership as gm ON gm.group_id=gp.group_id ' +
-  'WHERE gp.post_id=:postId AND (' +
-    'p.author_id=:selfId OR (gm.user_id=:selfId AND gm.is_admin=1)' +
-  ');'
+  'DELETE FROM group_post WHERE post_id=:postId;'
 )
 
 export const name = 'group_post'
@@ -46,13 +42,13 @@ export const name = 'group_post'
 export async function create(selfId, groupId, { content=null, picture=null, isPublic=true }) {
   log('create', ...arguments)
 
-  const postParams = { selfId, content, picture, isPublic: isPublic ? 1 : 0 }
-  const postId = await Post.create(selfId, { content, picture, isPublic })
+  const postParams = { content, picture, isPublic: isPublic ? 1 : 0 }
+  const postId = await Post.create(selfId, postParams)
 
   if (!postId) throw new Error('Could not create the post')
 
   try {
-    const params = { selfId, postId, groupId, content, picture, isPublic: isPublic ? 1 : 0 }
+    const params = { selfId, postId, groupId }
     const result = await db.query(createQuery(params))
   
     if (result.info.affectedRows == '0') {
@@ -82,7 +78,15 @@ export async function findByGroup(groupId) {
  * @param {string} postId The id of the post.
  * @returns {Promise<boolean>} True if the post was removed, false otherwise.
  */
-export async function remove(selfId, postId) {
+export async function remove(selfId, postId, groupId) {
   log('remove', ...arguments)
+
+  const post = await Post.findById(selfId, postId)
+  
+  if (post.author_id != selfId) {
+    const membership = await GroupMembership.findOneGroupMembership(selfId, groupId)
+    if (membership.is_admin != '1') return false
+  }
+  
   return db.query(removeQuery({ selfId, postId }))
 }
