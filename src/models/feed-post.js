@@ -18,7 +18,12 @@ const findByOwnerQuery = db.prepare(
   'FROM feed_post as fp ' +
   'INNER JOIN post as p ON p.id=fp.post_id ' +
   'INNER JOIN user as u ON u.id=p.author_id ' +
-  'WHERE fp.user_id=:userId AND (p.is_public=1 OR p.author_id=:selfId);'
+  'LEFT JOIN user_friendship as uf ON u.id=uf.user_a_id OR u.id=uf.user_b_id ' +
+  'WHERE fp.user_id=:userId AND (' +
+    'p.author_id=:selfId OR p.is_public=1 OR ' +
+    '(uf.user_a_id=:selfId AND uf.user_b_id=:userId) OR ' +
+    '(uf.user_a_id=:userId AND uf.user_b_id=:selfId) ' +
+  ');'
 )
 
 const removeQuery = db.prepare(
