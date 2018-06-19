@@ -18,7 +18,7 @@ const findByOwnerQuery = db.prepare(
   'FROM feed_post as fp ' +
   'INNER JOIN post as p ON p.id=fp.post_id ' +
   'INNER JOIN user as u ON u.id=p.author_id ' +
-  'WHERE fp.user_id=:userId;'
+  'WHERE fp.user_id=:userId AND (p.is_public=1 OR p.author_id=:selfId);'
 )
 
 const removeQuery = db.prepare(
@@ -66,12 +66,13 @@ export async function create(selfId, userId, { content=null, picture=null, isPub
 
 /**
  * Gets all the posts from a feed.
+ * @param {string} selfId The id of the viewer.
  * @param {string} userId The id of the owner.
  * @returns {Promise<Array<object>>} The posts.
  */
-export async function findByOwner(userId) {
+export async function findByOwner(selfId, userId) {
   log('findByOwner', ...arguments)
-  return db.query(findByOwnerQuery({ userId }))
+  return db.query(findByOwnerQuery({ selfId, userId }))
 }
 
 /**

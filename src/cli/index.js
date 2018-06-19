@@ -42,6 +42,10 @@ async function signUp() {
   const fields = await ask(['name', 'username', 'password'])
   console.log('signUp', fields)
 
+  if (!fields.name || !fields.username || !fields.password) {
+    throw new Error('Invalid credencials')
+  }
+
   const userId = await User.create(fields.username, fields.password, fields.name)
   console.log(`Você foi registrado com o id ${userId}.`)
 

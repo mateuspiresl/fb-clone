@@ -1,15 +1,11 @@
 import { ask, handle as handleInput } from './input'
 import * as groupRoute from './group'
 import * as User from '../models/user'
-import * as Post from '../models/post'
+import * as FeedPost from '../models/feed-post'
 import * as Friendship from '../models/friendship'
 import * as FriendshipRequest from '../models/friendship-request'
 import * as UserBlocking from '../models/user-blocking'
 
-
-function log(tag, ...args) {
-  console.log(`user.${tag}`, ...args)
-}
 
 function logWhere(method) {
   console.log(`\n----(${global.selfId}) user.${method}`)
@@ -37,13 +33,13 @@ export async function selfFeedScreen(next) {
 
   const options = {
     1: async () => {
-      const posts = await Post.findByAuthor(global.selfId, global.selfId)
+      const posts = await FeedPost.findByOwner(global.selfId, global.selfId)
       console.log('Posts:', posts.map(_=>_))
       selfFeedScreen()
     },
     2: async () => {
       const fields = await ask(['content', 'photo'])
-      const postId = await Post.create(global.selfId, fields)
+      const postId = await FeedPost.create(global.selfId, global.selfId, fields)
       console.log(`Post ${postId} criado.`)
       selfFeedScreen()
     },
@@ -133,7 +129,7 @@ async function acceptFriendshipRequest(userId) {
 }
 
 async function seeFeed(user) {
-  const posts = await Post.findByAuthor(global.selfId, user.id)
+  const posts = await FeedPost.findByOwner(global.selfId, user.id)
   console.log('Feed:', posts)
   profileScreen(user.id)
 }
@@ -149,7 +145,7 @@ function profileScreenAsCommon(user) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: seeFeed,
+    1: () => seeFeed(user),
     2: async () => {
       const requested = await FriendshipRequest.create(selfId, user.id)
 
@@ -181,10 +177,10 @@ function profileScreenAsFriend(user) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: seeFeed,
+    1: () => seeFeed(user),
     2: async () => {
-      const fields = await ask(['postContext', 'postPicture'])
-      const postId = await Post.create(selfId, fields)
+      const fields = await ask(['content', 'picture'])
+      const postId = await FeedPost.create(selfId, user.id, fields)
 
       console.log(`Post ${postId} criado no mural de ${user.name}.`)
       profileScreen(user.id)
@@ -231,7 +227,7 @@ function profileScreenAsFriendshipRequester(user) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: seeFeed,
+    1: () => seeFeed(user),
     2: async () => {
       const requested = await FriendshipRequest.remove(selfId, user.id)
 
@@ -270,7 +266,7 @@ function profileScreenAsFriendshipRequested(user) {
     4. Voltar para a sessão de usuários`
 
   const options = {
-    1: seeFeed,
+    1: () => seeFeed(user),
     2: async () => {
       const accepted = await acceptFriendshipRequest(user.id)
 
