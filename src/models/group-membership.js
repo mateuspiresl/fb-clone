@@ -18,9 +18,8 @@ const createQuery = db.prepare(
   ');'
 )
 
-const setAdminQuery = db.prepare(
-  'UPDATE group_membership set ' + 
-  'is_admin=:isAdmin;'
+const toggleUserPermissionQuery = db.prepare(
+  'UPDATE group_membership set is_admin=:isAdmin WHERE user_id=:userId AND group_id=:groupId;'
 )
 
 const removeQuery = db.prepare(
@@ -156,10 +155,13 @@ export async function findOneGroupMembership(userId, groupId) {
  * @param {string} groupId The id of the group.
  * @returns {Promise<boolean>} True if the request was successful.
  */
-export async function setAdminStatus(isAdmin) {
+export async function toggleUserPermission(userId, groupId) {
   log('list group membership', ...arguments)
   try {
-    return await db.query(setAdminQuery({ isAdmin: (isAdmin ? 1 : 0) }))
+    const currentMembership = await findOneGroupMembership(userId, groupId)
+    const isAdmin = currentMembership.is_admin
+    console.log('ADMIN', isAdmin)
+    return await db.query(toggleUserPermissionQuery({ userId, isAdmin: (isAdmin == '0' ? 1 : 0), groupId }))
   }
   catch (error) {
     if (error.code === 1062) return false

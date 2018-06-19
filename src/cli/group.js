@@ -29,7 +29,7 @@ export default async function GroupSection(next) {
     1: next,
     2: async () => {
       const groups = await Group.findAllByCreator(global.selfId)
-      
+
       if (groups.length === 0) {
         console.log('Atualmente você não gerencia nenhum grupo.')
       } else {
@@ -46,7 +46,7 @@ export default async function GroupSection(next) {
       const groupId = await Group.create(global.selfId, fields)
 
       await GroupMembership.create(global.selfId, global.selfId, groupId, true)
-      
+
       console.log(`Você criou o grupo ${fields.name}.`)
       current()
     }
@@ -57,7 +57,7 @@ export default async function GroupSection(next) {
 
 async function groupScreen(groupId, next) {
   logWhere('groupScreen')
-  
+
   const group = await Group.findById(groupId)
 
   if (!group) {
@@ -67,7 +67,7 @@ async function groupScreen(groupId, next) {
     console.log('Grupo:', group)
 
     const membership = await GroupMembership.findOneGroupMembership(global.selfId, groupId)
-  
+
     if (membership) {
       if (membership.is_admin === '1') {
         asAdminScreen(group, next)
@@ -186,7 +186,8 @@ async function asAdminScreen(group, next) {
       8. Listar solicitações de participação
       9. Aceitar solicitação de participação
       10. Rejeitar solicitação de participação
-      11. Apagar grupo`
+      11. Alterar permissão de membro - Dar ou revogar status Admin
+      12. Apagar grupo`
 
   var options = {
     // Voltar
@@ -205,7 +206,7 @@ async function asAdminScreen(group, next) {
 
       if (memberId) {
         const user = await User.findById(global.selfId, memberId)
-  
+
         if (user && await GroupMembership.remove(memberId, group.id)) {
           console.log(`O usuário '${user.name}' foi removido do grupo '${group.name}'.`)
           return next()
@@ -220,7 +221,7 @@ async function asAdminScreen(group, next) {
       const blockedUsers = await GroupBlocking.findAllBlockedUsers(group.id)
       console.log('usuários bloqueados: ', blockedUsers)
       current()
-    }, 
+    },
     // Bloquear membro
     6: async () => {
       console.log('Qual membro deseja bloquear e remover do grupo?')
@@ -247,7 +248,7 @@ async function asAdminScreen(group, next) {
     // Aceitar solicitação
     9: async () => {
       const userId = await ask('userId')
-      
+
       if (await GroupRequest.remove(userId, group.id)) {
         if (await GroupMembership.create(global.selfId, userId, group.id, false)) {
           const user = await User.findById(global.selfId, userId)
@@ -264,7 +265,7 @@ async function asAdminScreen(group, next) {
     // Rejeitar solicitação
     10: async () => {
       const userId = await ask('userId')
-      
+
       if (await GroupRequest.remove(userId, group.id)) {
         const user = await User.findById(global.selfId, userId)
         if (user) {
@@ -278,14 +279,22 @@ async function asAdminScreen(group, next) {
 
       current()
     },
-    // Apagar grupo
+    // Alterar permissão de um membro (admin / membro comum)
     11: async () => {
+      console.log('Qual membro deseja tornar administrador?')
+      const userId = await ask('user_id')
+      await GroupMembership.toggleUserPermission(userId, group.id)
+      console.log('Você alterou as permissões do usuário ', userId)
+      current()
+    },
+    // Apagar grupo
+    12: async() => {
       if (await Group.remove(global.selfId, group.id)) {
         console.log(`Grupo ${group.name} apagado.`)
       } else {
         console.log('Erro ao processar a remoção de grupo')
       }
-      
+
       next()
     }
   }
