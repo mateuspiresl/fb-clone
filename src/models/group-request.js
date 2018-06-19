@@ -16,15 +16,8 @@ const removeQuery = db.prepare(
   'WHERE user_id=:userId AND group_id=:groupId;'
 )
 
-const findAllByRequesterQuery = db.prepare(
-  'SELECT * FROM group_membership_request WHERE user_id=:user_id;'
-)
-
 const findAllByGroupQuery = db.prepare(
-  'SELECT g.*, u.name as user_name, u.photo as user_photo ' +
-  'FROM group_membership_request as g ' +
-  'INNER JOIN user as u ON u.id=g.user_id ' +
-  'WHERE g.group_id=:groupId;'
+  'SELECT * FROM group_membership_request WHERE group_id=:groupId;'
 )
 
 const findAllByUserQuery = db.prepare(
@@ -80,7 +73,7 @@ export async function remove(userId, groupId) {
  * @returns {Promise<Array<object>>} The data related to the existent membership requests.
  */
 export function findAllByGroup(groupId) {
-  log('findAll group memberships by creator', ...arguments)
+  log('findAll group memberships by group', ...arguments)
   return db.query(findAllByGroupQuery({ groupId }))
 }
 

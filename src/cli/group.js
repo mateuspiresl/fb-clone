@@ -106,7 +106,8 @@ export async function creationScreen() {
 
 export async function create() {
   const fields = await ask(['name', 'description', 'picture'])
-  await Group.create(global.selfId, fields)
+  const createdGroupId = await Group.create(global.selfId, fields)
+  await GroupMembership.create(global.selfId, global.selfId, createdGroupId, true)
   console.log(`Você criou o grupo ${fields.name}.`, fields)
   sectionScreen()
 }
@@ -134,14 +135,14 @@ export async function notAsMemberScreen(groupId) {
       sectionScreen()
     },
   }
-  
+
   options = userHasPendingMembershipRequest ?
     {
       ...options,
       2: async () => {
         const requestRemoval = await GroupRequest.remove(global.selfId, groupId)
         const message = 'Sua solicitação foi cancelada.'
-        
+
         // go back to this group screen [IM]
         console.log(message, requestRemoval)
         groupScreen(groupId)
@@ -175,15 +176,34 @@ export async function asMemberScreen(groupId) {
   // ownerPermissions = [adminPermissions = [commonPermissions]] [IM]
 
 
-  const text = `
-    Você está na tela de um Grupo como um membro simples ativo. O que deseja fazer?
-    1. Listar postagens
-    2. Listar membros
-    3. Criar um post
-    4. Responder a um post
-    5. Voltar para a sessão de Grupos`
+  const membership = await GroupMembership.findOneGroupMembership(global.selfId, groupId)
+  const isAdmin = membership[0].is_admin == 1
+  console.log('Você está na tela de um Grupo . Admin = ', isAdmin)
 
-  const defaultOptions = {
+  const text = isAdmin ?
+    `
+      O que deseja fazer?
+      1. Listar postagens
+      2. Listar membros
+      3. Criar um post
+      4. Responder a um post
+      5. Voltar para a sessão de Grupos
+      6. Apagar uma postagem
+      7. Apagar um comentário de uma postagem
+      8. Listar solicitações de participação
+      9. Remover um membro
+      10. Remover e bloquear um membro
+      11. Gerenciar solicitação de participação`
+    : // otherwhise [IM]
+    `
+      O que deseja fazer?
+      1. Listar postagens
+      2. Listar membros
+      3. Criar um post
+      4. Responder a um post
+      5. Voltar para a sessão de Grupos`
+
+  var options = {
     1: async () => {
       const posts = await GroupPost.findByGroup(groupId)
       console.log('Posts neste grupo: ', posts)
@@ -195,48 +215,67 @@ export async function asMemberScreen(groupId) {
       console.log('Os membros são ', members)
       asMemberScreen(groupId)
     },
-    3: async () => {
-      const fields = await ask(['content', 'picture'])
-      const post = await GroupPost.create(global.selfId, groupId, fields)
-
-      console.log('Post realizado: ', post)
-      asMemberScreen(groupId)
+    3: groupPostScreen,
+    4: async () => {
+      groupPostCommentScreen(groupId)
     },
-    4: commentPost,
     5: function() {
       console.log('Voltando para a sessão de Grupos.')
       sectionScreen()
     }
   }
 
-  // const adminOptions = {
-  //   ...defaultOptions,
-  //   6: function() {
-  //     console.log('Banindo usuário')
-  //     console.warn('Not implemented yet')
-  //     process.exit()
-  //   }
-  // }
+  if (isAdmin) {
+    options = {
+      ...options,
+      6: removePostScreen,
+      7: undefined,
+      8: async () => {
+        listMembershipRequestsScreen(groupId)
+      },
+      9: undefined,
+      10: undefined,
+      11: async () => {
+        console.log('Digite o id da solicitação que deseja manipular')
+        // const id = ask['id']
+        console.warn('Not implemented yet.')
 
-  // const ownerOptions = {
-  //   ...adminOptions,
-  //   7: function() {
-  //     console.log('Deletando grupo')
-  //     console.warn('Not implemented yet')
-  //     process.exit()
-  //   }
-  // }
+      }
+    }
+  }
 
-  // Should decide which options can we expose based on user permissions [IM]
-  // if (hasPermision...)
-
-  handleInput(text, defaultOptions, asMemberScreen)
+  handleInput(text, options, asMemberScreen)
 }
 
-export async function commentPost() {
-  logWhere('commentPost')
-  
-  const fields = await ask(['content'])
-  console.log('group.commentPost', 'Comentário criado em post.', fields)
-  asMemberScreen()
+export async function listMembershipRequestsScreen(groupId) {
+  logWhere('listMembershipRequestsScreen')
+  const groupMembershipRequests = await GroupRequest.findAllByGroup(groupId)
+  console.log('Listando: ', groupMembershipRequests)
+  asMemberScreen(groupId)
+}
+
+export async function removePostScreen(groupId) {
+  logWhere('removePostScreen')
+  console.log('Administrador, qual o id da postagem deseja apagar?')
+  const postId = await ask('id')
+  await GroupPost.remove(global.selfId, postId)
+  console.log('Postagem removida com sucesso.')
+  asMemberScreen(groupId)
+}
+
+
+export async function groupPostScreen(groupId) {
+  logWhere('groupPostScreen')
+
+  console.warn('Not implemented yet.')
+
+  asMemberScreen(groupId)
+}
+
+export async function groupPostCommentScreen(groupId) {
+  logWhere('groupPostCommentScreen')
+
+  console.warn('Not implemented yet.')
+
+  asMemberScreen(groupId)
 }

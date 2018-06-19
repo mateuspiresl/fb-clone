@@ -39,6 +39,10 @@ const listMembershipsByUserIdQuery = db.prepare(
   'SELECT * FROM group_membership WHERE user_id=:userId;'
 )
 
+const findOneGroupMembershipQuery = db.prepare(
+  'SELECT * FROM group_membership WHERE user_id=:userId AND group_id=:groupId;'
+)
+
 export const name = 'group_membership'
 
 
@@ -134,6 +138,16 @@ export async function checkIfExists(userId, groupId) {
   }
 }
 
+export async function findOneGroupMembership(userId, groupId) {
+  log('finding group membership', ...arguments)
+  try {
+    return await db.query(findOneGroupMembershipQuery({ userId, groupId }))
+  }
+  catch (error) {
+    if (error.code === 1062) return false
+    else throw error
+  }
+}
 
 /**
  * Switch membership admin value.
