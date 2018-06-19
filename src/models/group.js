@@ -89,8 +89,9 @@ export async function findAll() {
  * @returns The queried group.
  */
 export async function findById(groupId) {
-  log('findAll', ...arguments)
-  return await db.query(findByIdQuery({groupId}))
+  log('findById', ...arguments)
+  const sql = findByIdQuery({ groupId })
+  return (await db.query(sql))[0] || null
 }
 
 /**
