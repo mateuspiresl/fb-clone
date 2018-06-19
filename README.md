@@ -48,6 +48,12 @@ Get into the server:
 mysql --user=root --password=pw
 ```
 
+To drop the current database:
+
+```bash
+drop database `fb-clone`
+```
+
 Copy the contents of  `/config/database.sql` and paste in the terminal.
 It will create the database and tables.
 

@@ -8,7 +8,10 @@ function logWhere(method) {
   console.log('\n---- group.' + method)
 }
 
+global.defaultNext
+
 export async function sectionScreen(next) {
+  global.defaultNext = next
   logWhere('sectionScreen')
 
   const text = `
@@ -21,31 +24,22 @@ export async function sectionScreen(next) {
     6. Criar um grupo`
 
   const options = {
-    1: next,
+    1: global.defaultNext,
     2: async () => {
       const groupsThatUserOwns = await Group.findAllByCreator(global.selfId)
-      console.log('Sou dono dos grupos: ', groupsThatUserOwns)
-      next()
+      if (groupsThatUserOwns.length === 0) {
+        console.log('Atualmente você não gerencia nenhum grupo.')
+        sectionScreen()
+        return
+      }
+      console.log('Você gerencia os grupos: ', groupsThatUserOwns)
+      sectionScreen()
     },
     3: listGroupsThatImMember,
     4: listAllGroups,
     5: async () => {
-      
       const groupId = await ask('id')
       groupScreen(groupId)
-      // When navigating, there is a route to groups that i am member
-      // and routes for groups that i am not an actual member.
-      // I guess all the logic to check my relation with the group
-      // should be plced here. [IM]
-      // chosenId = input()
-      // group = Groups.get(byChosenId)
-      // const amIMember: Bool = group.checkMembership(withMe)
-      // if amIMember:
-      // groupScreen(amIMember)
-      // console.log('Navegando para o grupo escolhido.')
-      
-      // notAsMemberScreen()
-      // asMemberScreen()
     },
     6: creationScreen
   }
@@ -57,6 +51,11 @@ export async function sectionScreen(next) {
 export async function groupScreen(groupId) {
   logWhere('groupScreen')
   const group = await Group.findById(groupId)
+  if (group.length === 0) {
+    console.log('Grupo inexistente.')
+    sectionScreen()
+    return
+  }
   console.log(group)
   // check membership [IM]
   const membershipExists = await GroupMembership.checkIfExists(global.selfId, groupId)
@@ -71,9 +70,8 @@ export async function groupScreen(groupId) {
 
 export async function listGroupsThatImMember() {
   logWhere('listGroupsThatImMember')
-  const allGroups = await GroupMembership.f()
-  console.log('Listando todos os grupos')
-  console.log(allGroups)
+  const allGroups = await GroupMembership.listUserMemberships(global.selfId)
+  console.log('Listando todos os grupos que sou membro ', allGroups)
   sectionScreen()
 }
 

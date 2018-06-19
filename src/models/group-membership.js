@@ -35,6 +35,10 @@ const checkIfExistsQuery = db.prepare(
   'SELECT * FROM group_membership WHERE user_id=:userId AND group_id=:groupId;'
 )
 
+const listMembershipsByUserIdQuery = db.prepare(
+  'SELECT * FROM group_membership WHERE user_id=:userId;'
+)
+
 export const name = 'group_membership'
 
 
@@ -98,6 +102,25 @@ export async function list(groupId) {
     else throw error
   }
 }
+
+
+/**
+ * Lists all group memberships from a given user.
+ * @param {string} userId The id of the user.
+ * @returns {Promise<Array<string>>} True if the request was successful.
+ */
+export async function listUserMemberships(userId) {
+  log('list group membership', ...arguments)
+  
+  try {
+    return await db.query(listMembershipsByUserIdQuery({ userId }))
+  }
+  catch (error) {
+    if (error.code === 1062) return false
+    else throw error
+  }
+}
+
 
 export async function checkIfExists(userId, groupId) {
   log('checking membership existance', ...arguments)
